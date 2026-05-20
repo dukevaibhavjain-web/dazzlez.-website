@@ -6,11 +6,19 @@ import { fileURLToPath } from "url";
 import sharp from "sharp";
 
 import { Categories } from "./collections/Categories";
+import { ColorStones } from "./collections/ColorStones";
 import { Customers } from "./collections/Customers";
+import { DiamondCategories } from "./collections/DiamondCategories";
+import { FxRates } from "./collections/FxRates";
+import { MakingRules } from "./collections/MakingRules";
 import { Occasions } from "./collections/Occasions";
+import { Products } from "./collections/Products";
+import { RateDiamond } from "./collections/RateDiamond";
+import { RateGold } from "./collections/RateGold";
 import { Shapes } from "./collections/Shapes";
 import { SubCategories } from "./collections/SubCategories";
 import { FeatureFlags } from "./globals/FeatureFlags";
+import { SiteSettings } from "./globals/SiteSettings";
 import { consoleEmailAdapter } from "./lib/email-console";
 
 const filename = fileURLToPath(import.meta.url);
@@ -37,13 +45,23 @@ export default buildConfig({
       admin: { group: "Catalog" },
       fields: [{ name: "alt", type: "text" }],
     },
+    // Catalog
     Categories,
     SubCategories,
     Shapes,
     Occasions,
+    Products,
+    // Pricing
+    DiamondCategories,
+    ColorStones,
+    RateGold,
+    RateDiamond,
+    MakingRules,
+    FxRates,
+    // CRM
     Customers,
   ],
-  globals: [FeatureFlags],
+  globals: [SiteSettings, FeatureFlags],
   editor: lexicalEditor(),
   email: consoleEmailAdapter,
   secret: process.env.PAYLOAD_SECRET || "",

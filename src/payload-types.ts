@@ -74,6 +74,13 @@ export interface Config {
     'sub-categories': SubCategory;
     shapes: Shape;
     occasions: Occasion;
+    products: Product;
+    'diamond-categories': DiamondCategory;
+    'color-stones': ColorStone;
+    'rate-gold': RateGold;
+    'rate-diamond': RateDiamond;
+    'making-rules': MakingRule;
+    'fx-rates': FxRate;
     customers: Customer;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -88,6 +95,13 @@ export interface Config {
     'sub-categories': SubCategoriesSelect<false> | SubCategoriesSelect<true>;
     shapes: ShapesSelect<false> | ShapesSelect<true>;
     occasions: OccasionsSelect<false> | OccasionsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    'diamond-categories': DiamondCategoriesSelect<false> | DiamondCategoriesSelect<true>;
+    'color-stones': ColorStonesSelect<false> | ColorStonesSelect<true>;
+    'rate-gold': RateGoldSelect<false> | RateGoldSelect<true>;
+    'rate-diamond': RateDiamondSelect<false> | RateDiamondSelect<true>;
+    'making-rules': MakingRulesSelect<false> | MakingRulesSelect<true>;
+    'fx-rates': FxRatesSelect<false> | FxRatesSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -99,9 +113,11 @@ export interface Config {
   };
   fallbackLocale: null;
   globals: {
+    'site-settings': SiteSetting;
     'feature-flags': FeatureFlag;
   };
   globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'feature-flags': FeatureFlagsSelect<false> | FeatureFlagsSelect<true>;
   };
   locale: null;
@@ -259,6 +275,226 @@ export interface Occasion {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  /**
+   * Style code, e.g. 'ER-001'. Natural key for imports + image folder lookup.
+   */
+  code: string;
+  status?: ('draft' | 'active' | 'archived') | null;
+  /**
+   * Auto-derived from code if blank.
+   */
+  slug?: string | null;
+  /**
+   * Customer-facing title. e.g. 'Cushion Cut Halo Engagement Ring'.
+   */
+  displayName: string;
+  description?: string | null;
+  category: number | Category;
+  subCategory?: (number | null) | SubCategory;
+  primaryShape?: (number | null) | Shape;
+  /**
+   * If true, customer can pick 1ct / 2ct / 3ct diamond size variants.
+   */
+  isSolitaire?: boolean | null;
+  /**
+   * If true, customer picks ring size (US 4–13). Auto-set on save if category=Rings.
+   */
+  isRing?: boolean | null;
+  fulfillmentType: 'made_to_order' | 'ready_stock';
+  /**
+   * Units available. Only used for Ready Stock.
+   */
+  stockQuantity?: number | null;
+  heroImage?: (number | null) | Media;
+  gallery?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  metals?:
+    | {
+        purity: '9K' | '14K' | '18K' | '22K' | 'Silver925' | 'Platinum';
+        /**
+         * Grams of metal at this purity.
+         */
+        weightG: number;
+        id?: string | null;
+      }[]
+    | null;
+  diamonds?:
+    | {
+        role: 'small' | 'solitaire';
+        shape?: (number | null) | Shape;
+        /**
+         * Stone dimensions, e.g. '1.85*1.85' or '6.00*4.00'.
+         */
+        sizeMm?: string | null;
+        /**
+         * Total carat weight (sum of all stones in this row).
+         */
+        weightCt: number;
+        count: number;
+        cut?: string | null;
+        color?: string | null;
+        clarity?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  colorStones?:
+    | {
+        stone: number | ColorStone;
+        weightCt: number;
+        count: number;
+        id?: string | null;
+      }[]
+    | null;
+  designerNotes?: string | null;
+  remarks?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "color-stones".
+ */
+export interface ColorStone {
+  id: number;
+  name: string;
+  /**
+   * URL-safe: 'ruby', 'emerald', 'blue-sapphire'.
+   */
+  slug: string;
+  grade?: ('Premium' | 'Standard') | null;
+  /**
+   * INR per carat. Editable anytime.
+   */
+  ratePerCt: number;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "diamond-categories".
+ */
+export interface DiamondCategory {
+  id: number;
+  name: string;
+  /**
+   * URL-safe identifier: 'natural', 'lab-premium', 'lab-standard'.
+   */
+  slug: string;
+  description?: string | null;
+  displayOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Per-gram INR rate per purity. Pricing engine uses the most recent row for each purity.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-gold".
+ */
+export interface RateGold {
+  id: number;
+  purity: '9K' | '14K' | '18K' | '22K' | 'Silver925' | 'Platinum';
+  /**
+   * INR per gram.
+   */
+  ratePerG: number;
+  source?: ('manual' | 'ibja' | 'imported') | null;
+  effectiveAt: string;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Per-carat INR rate by diamond category × carat band. Add 4Cs-specific rows for finer pricing later.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-diamond".
+ */
+export interface RateDiamond {
+  id: number;
+  diamondCategory: number | DiamondCategory;
+  /**
+   * Inclusive lower bound, e.g. 0.00
+   */
+  ctBandMin: number;
+  /**
+   * Exclusive upper bound, e.g. 1.00
+   */
+  ctBandMax: number;
+  /**
+   * INR per carat. Whole stone is multiplied by this rate.
+   */
+  ratePerCt: number;
+  /**
+   * Optional, e.g. 'Excellent'. Leave blank for any.
+   */
+  cut?: string | null;
+  /**
+   * Optional, e.g. 'G'. Leave blank for any.
+   */
+  color?: string | null;
+  /**
+   * Optional, e.g. 'SI'. Leave blank for any.
+   */
+  clarity?: string | null;
+  effectiveAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Making charges per metal type. Edit anytime — affects every product using that metal immediately.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "making-rules".
+ */
+export interface MakingRule {
+  id: number;
+  metalType: 'gold' | 'silver' | 'platinum';
+  type: 'wastage_plus_making' | 'flat';
+  /**
+   * Wastage % (only for Wastage+Making mode)
+   */
+  wastagePct?: number | null;
+  /**
+   * INR per gram of metal
+   */
+  makingPerG: number;
+  /**
+   * Minimum making charge (floor)
+   */
+  minMaking?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * How many INR for 1 unit of each foreign currency. Edit anytime.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fx-rates".
+ */
+export interface FxRate {
+  id: number;
+  currency: 'USD' | 'AED' | 'GBP' | 'EUR' | 'SGD';
+  /**
+   * ₹ per 1 unit of this currency, e.g. 85 for USD
+   */
+  inrPerUnit: number;
+  source?: ('manual' | 'api') | null;
+  effectiveAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers".
  */
 export interface Customer {
@@ -340,6 +576,34 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'occasions';
         value: number | Occasion;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'diamond-categories';
+        value: number | DiamondCategory;
+      } | null)
+    | ({
+        relationTo: 'color-stones';
+        value: number | ColorStone;
+      } | null)
+    | ({
+        relationTo: 'rate-gold';
+        value: number | RateGold;
+      } | null)
+    | ({
+        relationTo: 'rate-diamond';
+        value: number | RateDiamond;
+      } | null)
+    | ({
+        relationTo: 'making-rules';
+        value: number | MakingRule;
+      } | null)
+    | ({
+        relationTo: 'fx-rates';
+        value: number | FxRate;
       } | null)
     | ({
         relationTo: 'customers';
@@ -489,6 +753,142 @@ export interface OccasionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  code?: T;
+  status?: T;
+  slug?: T;
+  displayName?: T;
+  description?: T;
+  category?: T;
+  subCategory?: T;
+  primaryShape?: T;
+  isSolitaire?: T;
+  isRing?: T;
+  fulfillmentType?: T;
+  stockQuantity?: T;
+  heroImage?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  metals?:
+    | T
+    | {
+        purity?: T;
+        weightG?: T;
+        id?: T;
+      };
+  diamonds?:
+    | T
+    | {
+        role?: T;
+        shape?: T;
+        sizeMm?: T;
+        weightCt?: T;
+        count?: T;
+        cut?: T;
+        color?: T;
+        clarity?: T;
+        id?: T;
+      };
+  colorStones?:
+    | T
+    | {
+        stone?: T;
+        weightCt?: T;
+        count?: T;
+        id?: T;
+      };
+  designerNotes?: T;
+  remarks?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "diamond-categories_select".
+ */
+export interface DiamondCategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  displayOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "color-stones_select".
+ */
+export interface ColorStonesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  grade?: T;
+  ratePerCt?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-gold_select".
+ */
+export interface RateGoldSelect<T extends boolean = true> {
+  purity?: T;
+  ratePerG?: T;
+  source?: T;
+  effectiveAt?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-diamond_select".
+ */
+export interface RateDiamondSelect<T extends boolean = true> {
+  diamondCategory?: T;
+  ctBandMin?: T;
+  ctBandMax?: T;
+  ratePerCt?: T;
+  cut?: T;
+  color?: T;
+  clarity?: T;
+  effectiveAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "making-rules_select".
+ */
+export interface MakingRulesSelect<T extends boolean = true> {
+  metalType?: T;
+  type?: T;
+  wastagePct?: T;
+  makingPerG?: T;
+  minMaking?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fx-rates_select".
+ */
+export interface FxRatesSelect<T extends boolean = true> {
+  currency?: T;
+  inrPerUnit?: T;
+  source?: T;
+  effectiveAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers_select".
  */
 export interface CustomersSelect<T extends boolean = true> {
@@ -555,6 +955,30 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
+ * Site-wide configuration. Disclaimer text, badges, copy.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  /**
+   * Shown on PDP and quote PDFs for made-to-order products.
+   */
+  madeToOrderDisclaimer?: string | null;
+  /**
+   * Shown on PDP for ready-stock products.
+   */
+  readyStockBadgeText?: string | null;
+  readyStockPriceNote?: string | null;
+  /**
+   * How long a generated quote stays valid before gold-rate movement requires a fresh quote.
+   */
+  quoteValidityDays?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Master switches for every external integration. When a switch is OFF, a safe manual fallback runs. Flip ON only after you've tested the integration.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -588,6 +1012,19 @@ export interface FeatureFlag {
   i18n_other_languages?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  madeToOrderDisclaimer?: T;
+  readyStockBadgeText?: T;
+  readyStockPriceNote?: T;
+  quoteValidityDays?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

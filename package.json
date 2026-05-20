@@ -10,12 +10,16 @@
     "lint": "eslint",
     "generate:importmap": "payload generate:importmap",
     "generate:types": "payload generate:types",
-    "seed:taxonomy": "tsx --env-file=.env.local scripts/seed-taxonomy.ts"
+    "seed:taxonomy": "tsx --env-file=.env.local scripts/seed-taxonomy.ts",
+    "seed:rates": "tsx --env-file=.env.local scripts/seed-rates.ts",
+    "seed:all": "pnpm seed:taxonomy && pnpm seed:rates",
+    "seed:test-product": "tsx --env-file=.env.local scripts/seed-test-product.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",
     "@payloadcms/next": "^3.84.1",
     "@payloadcms/richtext-lexical": "^3.84.1",
+    "@payloadcms/ui": "^3.84.1",
     "graphql": "^16.14.0",
     "next": "16.2.6",
     "payload": "^3.84.1",
