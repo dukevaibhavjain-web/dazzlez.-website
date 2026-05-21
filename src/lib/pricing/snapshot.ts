@@ -92,6 +92,38 @@ function purityToMetalType(purity: Purity): "gold" | "silver" | "platinum" {
   return "gold";
 }
 
+/**
+ * Resolve the metal weight (grams) to use for a given purity.
+ *
+ * Recipes from the Excel only carry gold weights (9K/14K/18K/22K). To make
+ * EVERY design priceable in silver and platinum (needed for filtering AND
+ * customization quotes), we fall back per the business rule:
+ *   - Silver 925: use the 9K gram weight (same number)
+ *   - Platinum:   use the 18K gram weight (same number)
+ * Gram-number substitution, not density-adjusted (per spec).
+ *
+ * Returns { weightG, derivedFrom } or null if we can't resolve any weight.
+ */
+function resolveMetalWeight(
+  product: PricingInput["product"],
+  purity: Purity,
+): { weightG: number; derivedFrom: Purity | null } | null {
+  const direct = product.metals?.find((m) => m.purity === purity);
+  if (direct) return { weightG: direct.weightG, derivedFrom: null };
+
+  const weightOf = (p: Purity) => product.metals?.find((m) => m.purity === p)?.weightG;
+
+  if (purity === "Silver925") {
+    const w = weightOf("9K") ?? weightOf("14K") ?? weightOf("18K");
+    if (w != null) return { weightG: w, derivedFrom: "9K" };
+  }
+  if (purity === "Platinum") {
+    const w = weightOf("18K") ?? weightOf("14K") ?? weightOf("9K");
+    if (w != null) return { weightG: w, derivedFrom: "18K" };
+  }
+  return null;
+}
+
 function lookupDiamondRate(bands: DiamondBand[], perStoneCt: number): number {
   const match = bands.find((b) => b.min <= perStoneCt && perStoneCt < b.max);
   if (match) return match.ratePerCt;
@@ -106,19 +138,20 @@ export function computePriceFromSnapshot(
   const { product, metalPurity, diamondCategorySlug, solitaireCarat, ringSize } = input;
 
   // ─── METAL ──────────────────────────────────────────────────────────
-  const metalEntry = product.metals?.find((m) => m.purity === metalPurity);
-  if (!metalEntry) {
+  const resolved = resolveMetalWeight(product, metalPurity);
+  if (!resolved) {
     throw new Error(
-      `Product ${product.code} has no metal recipe for purity=${metalPurity}. Available: ${
+      `Product ${product.code} cannot be priced in ${metalPurity}. Available: ${
         product.metals?.map((m) => m.purity).join(", ") ?? "(none)"
       }`,
     );
   }
+  const weightG = resolved.weightG;
   const goldRate = snapshot.goldByPurity.get(metalPurity);
   if (!goldRate || goldRate <= 0) {
-    throw new Error(`No gold rate for ${metalPurity}. Run 'pnpm seed:rates' or add one in admin.`);
+    throw new Error(`No rate for ${metalPurity}. Run 'pnpm seed:rates' or add one in admin.`);
   }
-  const metalCost = metalEntry.weightG * goldRate;
+  const metalCost = weightG * goldRate;
 
   // ─── DIAMONDS ───────────────────────────────────────────────────────
   const catId = snapshot.diamondCategoryIdBySlug.get(diamondCategorySlug);
@@ -170,11 +203,11 @@ export function computePriceFromSnapshot(
     { type: "wastage_plus_making" as const, wastagePct: 8, makingPerG: 3000, minMaking: 0 };
   let makingCost: number;
   if (rule.type === "wastage_plus_making") {
-    const wastageCost = metalEntry.weightG * (rule.wastagePct / 100) * goldRate;
-    const makingFlat = metalEntry.weightG * rule.makingPerG;
+    const wastageCost = weightG * (rule.wastagePct / 100) * goldRate;
+    const makingFlat = weightG * rule.makingPerG;
     makingCost = Math.max(wastageCost + makingFlat, rule.minMaking ?? 0);
   } else {
-    makingCost = Math.max(metalEntry.weightG * rule.makingPerG, rule.minMaking ?? 0);
+    makingCost = Math.max(weightG * rule.makingPerG, rule.minMaking ?? 0);
   }
 
   // ─── TOTALS ─────────────────────────────────────────────────────────
@@ -185,7 +218,7 @@ export function computePriceFromSnapshot(
   const lineItems: PriceLineItem[] = [
     {
       label: `Metal (${metalPurity})`,
-      detail: `${metalEntry.weightG.toFixed(3)}g × ₹${Math.round(goldRate).toLocaleString("en-IN")}/g`,
+      detail: `${weightG.toFixed(3)}g × ₹${Math.round(goldRate).toLocaleString("en-IN")}/g`,
       amountInr: Math.round(metalCost),
     },
     ...diamondComponents.map((d) => ({
@@ -215,7 +248,7 @@ export function computePriceFromSnapshot(
     gst,
     lineItems,
     components: {
-      metal: { purity: metalPurity, weightG: metalEntry.weightG, ratePerG: goldRate, cost: Math.round(metalCost) },
+      metal: { purity: metalPurity, weightG: weightG, ratePerG: goldRate, cost: Math.round(metalCost) },
       diamonds: diamondComponents,
       colorStones: colorStoneComponents,
       making: { type: rule.type, cost: Math.round(makingCost) },

@@ -34,9 +34,12 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const cat = await getCategoryBySlug(category);
   if (!cat) notFound();
 
+  const metalCsv = str(sp.metal);
   const filters: CollectionFilters = {
     shape: str(sp.shape),
-    metal: str(sp.metal),
+    metals: metalCsv
+      ? (metalCsv.split(",").filter(Boolean) as CollectionFilters["metals"])
+      : undefined,
     style: str(sp.style),
     minPrice: str(sp.min) ? Number(str(sp.min)) : undefined,
     maxPrice: str(sp.max) ? Number(str(sp.max)) : undefined,

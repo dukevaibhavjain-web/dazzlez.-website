@@ -54,9 +54,26 @@ export function FilterBar({ shapes, styles, metals }: Props) {
     [params, pathname, router],
   );
 
+  // Multi-select toggle for a CSV param (e.g. metal=9K,14K)
+  const toggleCsv = useCallback(
+    (key: string, value: string) => {
+      const next = new URLSearchParams(params.toString());
+      const current = (next.get(key) ?? "").split(",").filter(Boolean);
+      const idx = current.indexOf(value);
+      if (idx >= 0) current.splice(idx, 1);
+      else current.push(value);
+      if (current.length) next.set(key, current.join(","));
+      else next.delete(key);
+      router.push(`${pathname}?${next.toString()}`, { scroll: false });
+    },
+    [params, pathname, router],
+  );
+
   const clearAll = () => router.push(pathname, { scroll: false });
 
   const current = (key: string) => params.get(key);
+  const csvHas = (key: string, value: string) =>
+    (params.get(key) ?? "").split(",").filter(Boolean).includes(value);
   const hasFilters = ["shape", "metal", "style", "min", "inStock"].some((k) => params.get(k));
 
   const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -127,7 +144,7 @@ export function FilterBar({ shapes, styles, metals }: Props) {
 
       <Group title="Metal">
         {metals.map((m) => (
-          <Chip key={m.value} active={current("metal") === m.value} onClick={() => setParam("metal", m.value)}>
+          <Chip key={m.value} active={csvHas("metal", m.value)} onClick={() => toggleCsv("metal", m.value)}>
             {m.label}
           </Chip>
         ))}

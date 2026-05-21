@@ -7,6 +7,8 @@
  */
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { computePriceFromSnapshot, loadRateSnapshot } from "@/lib/pricing";
+import type { ProductForPricing, Purity } from "@/lib/pricing/types";
 
 export type ProductCardData = {
   id: string | number;
@@ -22,7 +24,7 @@ export type ProductCardData = {
 
 export type CollectionFilters = {
   shape?: string; // shape slug
-  metal?: string; // purity value e.g. "18K"
+  metals?: Purity[]; // multi-select metal purities
   style?: string; // sub-category slug
   minPrice?: number;
   maxPrice?: number;
@@ -30,6 +32,8 @@ export type CollectionFilters = {
   sort?: "featured" | "price-asc" | "price-desc";
   page?: number;
 };
+
+const GOLD_PURITIES: Purity[] = ["9K", "14K", "18K", "22K"];
 
 export type FilterOption = { label: string; value: string };
 
@@ -125,38 +129,58 @@ export async function getProductsForCategory(
     });
     if (subDoc.docs[0]) and.push({ subCategory: { equals: subDoc.docs[0].id } });
   }
-  if (filters.metal) and.push({ "metals.purity": { equals: filters.metal } });
   if (filters.inStock) and.push({ fulfillmentType: { equals: "ready_stock" } });
-  if (filters.minPrice != null) and.push({ fromPriceInr: { greater_than_equal: filters.minPrice } });
-  if (filters.maxPrice != null) and.push({ fromPriceInr: { less_than_equal: filters.maxPrice } });
 
-  const sort =
-    filters.sort === "price-asc"
-      ? "fromPriceInr"
-      : filters.sort === "price-desc"
-        ? "-fromPriceInr"
-        : "code";
+  // Pull all products matching the non-price (DB-level) filters. Price is
+  // metal-dependent so we compute it in-memory from a single rate snapshot.
+  const [res, snapshot] = await Promise.all([
+    payload.find({ collection: "products", where: { and }, depth: 1, limit: 500 }),
+    loadRateSnapshot(payload),
+  ]);
 
-  const res = await payload.find({
-    collection: "products",
-    where: { and },
-    depth: 1,
-    limit: 48,
-    page: filters.page ?? 1,
-    sort,
-  });
+  // Candidate metals: the ones the user selected, else the gold purities the
+  // product actually has (cheapest gold becomes the default "from").
+  const selectedMetals = filters.metals?.length ? filters.metals : null;
 
-  const products: ProductCardData[] = res.docs.map((doc) => {
-    const p = doc as unknown as {
-      id: string | number;
-      code: string;
+  type Row = ProductCardData & { _matches: boolean };
+  const rows: Row[] = res.docs.map((doc) => {
+    const p = doc as unknown as ProductForPricing & {
       slug: string;
       displayName: string;
       heroImage?: unknown;
       category?: { name?: string };
-      fromPriceInr?: number;
       fulfillmentType?: "made_to_order" | "ready_stock";
     };
+
+    const candidates: Purity[] =
+      selectedMetals ??
+      GOLD_PURITIES.filter((g) => p.metals?.some((m) => m.purity === g));
+
+    // Compute price for each candidate metal (Lab Standard = floor tier).
+    const prices: number[] = [];
+    for (const metal of candidates) {
+      try {
+        const b = computePriceFromSnapshot(snapshot, {
+          product: p,
+          metalPurity: metal,
+          diamondCategorySlug: "lab-standard",
+        });
+        prices.push(b.total);
+      } catch {
+        /* metal not resolvable for this product — skip */
+      }
+    }
+
+    const displayPrice = prices.length ? Math.min(...prices) : null;
+
+    // Price-range match: "match if ANY candidate metal price is in range".
+    const min = filters.minPrice ?? 0;
+    const max = filters.maxPrice ?? Number.POSITIVE_INFINITY;
+    const priceFilterActive = filters.minPrice != null || filters.maxPrice != null;
+    const matches = priceFilterActive
+      ? prices.some((pr) => pr >= min && pr <= max)
+      : true;
+
     return {
       id: p.id,
       code: p.code,
@@ -165,10 +189,31 @@ export async function getProductsForCategory(
       categoryName: p.category?.name ?? null,
       heroUrl: mediaUrl(p.heroImage),
       heroAlt: p.displayName,
-      fromPriceInr: p.fromPriceInr ?? null,
+      fromPriceInr: displayPrice,
       fulfillmentType: p.fulfillmentType ?? "made_to_order",
+      _matches: matches,
     };
   });
 
-  return { products, total: res.totalDocs };
+  const filtered = rows.filter((r) => r._matches);
+
+  // Sort
+  if (filters.sort === "price-asc") {
+    filtered.sort((a, b) => (a.fromPriceInr ?? Infinity) - (b.fromPriceInr ?? Infinity));
+  } else if (filters.sort === "price-desc") {
+    filtered.sort((a, b) => (b.fromPriceInr ?? -Infinity) - (a.fromPriceInr ?? -Infinity));
+  } else {
+    filtered.sort((a, b) => a.code.localeCompare(b.code));
+  }
+
+  // Paginate in-memory
+  const pageSize = 48;
+  const page = filters.page ?? 1;
+  const start = (page - 1) * pageSize;
+  const paged = filtered.slice(start, start + pageSize).map(({ _matches, ...rest }) => {
+    void _matches;
+    return rest;
+  });
+
+  return { products: paged, total: filtered.length };
 }
