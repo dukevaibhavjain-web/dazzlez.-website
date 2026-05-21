@@ -13,7 +13,10 @@ import { ProductCard } from "@/components/storefront/ProductCard";
 // by the buy-box, so caching the page doesn't stale the pricing.
 export const revalidate = 300;
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ metal?: string; diamond?: string }>;
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function imgUrl(media: any, size: "zoom" | "card" = "zoom"): string | null {
@@ -32,8 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const sp = await searchParams;
   const product = (await getProductBySlug(slug)) as any;
   if (!product) notFound();
 
@@ -64,6 +68,8 @@ export default async function ProductPage({ params }: Props) {
           metalOptions={metalOptions}
           isSolitaire={!!product.isSolitaire}
           isRing={!!product.isRing}
+          initialMetal={sp.metal}
+          initialTier={sp.diamond}
         />
       </div>
 

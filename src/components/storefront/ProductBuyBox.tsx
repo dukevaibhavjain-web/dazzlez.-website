@@ -31,22 +31,37 @@ function inr(n: number) {
   return "₹" + n.toLocaleString("en-IN");
 }
 
+const TIER_KEYS: TierKey[] = ["natural", "lab-premium", "lab-standard"];
+
 export function ProductBuyBox({
   code,
   displayName,
   metalOptions,
   isSolitaire,
   isRing,
+  initialMetal,
+  initialTier,
 }: {
   code: string;
   displayName: string;
   metalOptions: MetalOption[];
   isSolitaire: boolean;
   isRing: boolean;
+  initialMetal?: string;
+  initialTier?: string;
 }) {
-  const defaultMetal = metalOptions.find((m) => m.value === "18K")?.value ?? metalOptions[0]?.value ?? "18K";
+  // Default metal: the one we arrived with (from a card), else the cheapest
+  // available metal (matches the collection "from" price), else first option.
+  const metalIsValid = initialMetal && metalOptions.some((m) => m.value === initialMetal);
+  const defaultMetal =
+    (metalIsValid ? initialMetal : undefined) ?? metalOptions[0]?.value ?? "18K";
+  // Default tier: arrived tier if valid, else lab-standard (the "from" basis,
+  // so the headline matches the collection card).
+  const defaultTier: TierKey = (TIER_KEYS as string[]).includes(initialTier ?? "")
+    ? (initialTier as TierKey)
+    : "lab-standard";
   const [metal, setMetal] = useState(defaultMetal);
-  const [tier, setTier] = useState<TierKey>("lab-premium");
+  const [tier, setTier] = useState<TierKey>(defaultTier);
   const [size, setSize] = useState("");
   const [carat, setCarat] = useState("");
   const [engraving, setEngraving] = useState("");

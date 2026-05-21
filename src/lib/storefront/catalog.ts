@@ -19,6 +19,9 @@ export type ProductCardData = {
   heroUrl: string | null;
   heroAlt: string;
   fromPriceInr: number | null;
+  /** The metal that produced fromPriceInr — carried into the PDP so its
+   * headline price matches what the card showed. */
+  fromMetal: Purity | null;
   fulfillmentType: "made_to_order" | "ready_stock";
 };
 
@@ -90,6 +93,7 @@ export async function getSimilarProducts(
       categoryName: null,
       heroUrl: mediaUrl(p.heroImage), heroAlt: p.displayName,
       fromPriceInr: p.fromPriceInr ?? null,
+      fromMetal: null,
       fulfillmentType: p.fulfillmentType ?? "made_to_order",
     };
   });
@@ -217,8 +221,9 @@ export async function getProductsForCategory(
       selectedMetals ??
       GOLD_PURITIES.filter((g) => p.metals?.some((m) => m.purity === g));
 
-    // Compute price for each candidate metal (Lab Standard = floor tier).
-    const prices: number[] = [];
+    // Compute price for each candidate metal (Lab Standard = floor tier);
+    // track which metal gave the cheapest price so the PDP can open on it.
+    let best: { price: number; metal: Purity } | null = null;
     for (const metal of candidates) {
       try {
         const b = computePriceFromSnapshot(snapshot, {
@@ -226,14 +231,15 @@ export async function getProductsForCategory(
           metalPurity: metal,
           diamondCategorySlug: "lab-standard",
         });
-        prices.push(b.total);
+        if (!best || b.total < best.price) best = { price: b.total, metal };
       } catch {
         /* metal not resolvable for this product — skip */
       }
     }
 
     // Display the cheapest of the candidate metals — this is the number on the card.
-    const displayPrice = prices.length ? Math.min(...prices) : null;
+    const displayPrice = best?.price ?? null;
+    const fromMetal = best?.metal ?? null;
 
     // Price-range match: filter on the DISPLAYED price, so every card shown
     // has its visible price inside the selected range (no confusing mismatch
@@ -254,6 +260,7 @@ export async function getProductsForCategory(
       heroUrl: mediaUrl(p.heroImage),
       heroAlt: p.displayName,
       fromPriceInr: displayPrice,
+      fromMetal,
       fulfillmentType: p.fulfillmentType ?? "made_to_order",
       _matches: matches,
     };

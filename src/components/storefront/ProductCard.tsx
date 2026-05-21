@@ -3,9 +3,14 @@ import type { ProductCardData } from "@/lib/storefront/catalog";
 import { formatInr } from "@/lib/storefront/catalog";
 
 export function ProductCard({ product }: { product: ProductCardData }) {
+  // Carry the metal that produced the shown price into the PDP so its headline
+  // matches the card. (Diamond tier on the card is always the lab-standard floor.)
+  const href = product.fromMetal
+    ? `/product/${product.slug}?metal=${product.fromMetal}`
+    : `/product/${product.slug}`;
   return (
     <Link
-      href={`/product/${product.slug}`}
+      href={href}
       className="group block bg-white rounded-lg overflow-hidden border border-cream-200 hover:shadow-lg transition-shadow"
     >
       <div className="aspect-square bg-cream-200 overflow-hidden relative">
