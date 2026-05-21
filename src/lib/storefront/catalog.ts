@@ -232,14 +232,17 @@ export async function getProductsForCategory(
       }
     }
 
+    // Display the cheapest of the candidate metals — this is the number on the card.
     const displayPrice = prices.length ? Math.min(...prices) : null;
 
-    // Price-range match: "match if ANY candidate metal price is in range".
+    // Price-range match: filter on the DISPLAYED price, so every card shown
+    // has its visible price inside the selected range (no confusing mismatch
+    // between what's shown and what was filtered).
     const min = filters.minPrice ?? 0;
     const max = filters.maxPrice ?? Number.POSITIVE_INFINITY;
     const priceFilterActive = filters.minPrice != null || filters.maxPrice != null;
     const matches = priceFilterActive
-      ? prices.some((pr) => pr >= min && pr <= max)
+      ? displayPrice != null && displayPrice >= min && displayPrice <= max
       : true;
 
     return {
