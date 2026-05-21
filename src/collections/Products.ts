@@ -15,6 +15,8 @@ export const Products: CollectionConfig = {
     useAsTitle: "displayName",
     defaultColumns: ["code", "displayName", "category", "status"],
     group: "Catalog",
+    // Search across both code (RR-001) and the user-facing name
+    listSearchableFields: ["code", "displayName", "slug"],
   },
   access: { read: () => true },
   fields: [
@@ -220,12 +222,19 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeChange: [
       ({ data }) => {
-        // Auto-slug from code
+        // Auto-slug: SEO/AI-friendly name + code (name carries keywords, code
+        // guarantees uniqueness). Admin can override by setting slug manually.
         if (data?.code && !data.slug) {
-          data.slug = String(data.code)
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, "");
+          const slugify = (s: string) =>
+            String(s)
+              .normalize("NFKD")
+              .replace(/[̀-ͯ]/g, "") // strip diacritics: é → e, ñ → n
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "");
+          const codeSlug = slugify(data.code);
+          const nameSlug = data.displayName ? slugify(data.displayName) : "";
+          data.slug = nameSlug ? `${nameSlug}-${codeSlug}` : codeSlug;
         }
         return data;
       },

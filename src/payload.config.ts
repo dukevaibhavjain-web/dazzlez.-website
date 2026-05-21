@@ -41,7 +41,20 @@ export default buildConfig({
     },
     {
       slug: "media",
-      upload: true,
+      upload: {
+        imageSizes: [
+          { name: "thumb", width: 160, height: 160, position: "centre" },
+          { name: "card", width: 400, height: 400, position: "centre" },
+          { name: "zoom", width: 1200, height: 1200, withoutEnlargement: true },
+          { name: "og", width: 1200, height: 630, position: "centre" },
+        ],
+        mimeTypes: ["image/jpeg", "image/png", "image/webp"],
+      },
+      access: {
+        // Public read so storefront + admin thumbnails can fetch images.
+        // Mutations stay admin-only (default).
+        read: () => true,
+      },
       admin: { group: "Catalog" },
       fields: [{ name: "alt", type: "text" }],
     },

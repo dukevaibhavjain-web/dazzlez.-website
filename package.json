@@ -13,7 +13,9 @@
     "seed:taxonomy": "tsx --env-file=.env.local scripts/seed-taxonomy.ts",
     "seed:rates": "tsx --env-file=.env.local scripts/seed-rates.ts",
     "seed:all": "pnpm seed:taxonomy && pnpm seed:rates",
-    "seed:test-product": "tsx --env-file=.env.local scripts/seed-test-product.ts"
+    "seed:test-product": "tsx --env-file=.env.local scripts/seed-test-product.ts",
+    "import:excel": "tsx --env-file=.env.local scripts/import-excel.ts",
+    "import:images": "tsx --env-file=.env.local scripts/import-images.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",
@@ -22,10 +24,12 @@
     "@payloadcms/ui": "^3.84.1",
     "graphql": "^16.14.0",
     "next": "16.2.6",
+    "node-stream-zip": "^1.15.0",
     "payload": "^3.84.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

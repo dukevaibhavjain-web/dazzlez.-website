@@ -101,6 +101,15 @@ const errorBox: React.CSSProperties = {
 };
 
 const ProductPricePreview = () => {
+  // Guard against SSR/CSR mismatch: render a stable shell on first paint,
+  // then swap to live content after mount. Payload hooks like
+  // useDocumentInfo and useFormFields can return different values during
+  // SSR vs hydration which produces a React hydration warning.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { id } = useDocumentInfo();
   // Payload updates updatedAt on every save — watching it auto-refreshes the
   // preview without the user having to click Refresh.
@@ -163,6 +172,11 @@ const ProductPricePreview = () => {
     refetch();
   }, [refetch, updatedAt]);
 
+  // Match initial server-render output until client takes over — prevents
+  // React hydration mismatch warning.
+  if (!mounted) {
+    return <div style={note}>Loading preview…</div>;
+  }
   if (!id) {
     return <div style={note}>Save the product to see price preview.</div>;
   }
