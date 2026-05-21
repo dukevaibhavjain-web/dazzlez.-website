@@ -118,6 +118,17 @@ export const Products: CollectionConfig = {
       fields: [{ name: "image", type: "upload", relationTo: "media", required: true }],
     },
     {
+      name: "fromPriceInr",
+      type: "number",
+      index: true,
+      admin: {
+        position: "sidebar",
+        readOnly: true,
+        description:
+          "Cheapest variant (9K + Lab Standard), incl. GST. Auto-computed by `pnpm refresh:prices`. Drives collection filtering + sorting.",
+      },
+    },
+    {
       name: "pricePreview",
       type: "ui",
       admin: {

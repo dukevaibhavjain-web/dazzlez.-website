@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Dazzlez brand theme — derived from the June25 / Aug25 mockups.
+ * Deep navy canvas, warm gold accents, cream surfaces, elegant serif display.
+ *
+ * NOTE (Tailwind v4): static values go in `@theme`; values that reference
+ * runtime CSS variables (the next/font vars) must go in `@theme inline`.
+ * Mixing them in one block makes Tailwind drop the block.
+ */
+@theme {
+  --color-navy: #182740;
+  --color-navy-700: #22344f;
+  --color-navy-500: #34496a;
+  --color-gold: #c0a062;
+  --color-gold-300: #d8c191;
+  --color-cream: #f8f5ef;
+  --color-cream-200: #efe9df;
+  --color-ink: #1f1d1a;
+  --color-muted: #6b6a66;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), Georgia, serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Elegant serif for display headings */
+.font-display {
+  font-family: var(--font-serif);
+  letter-spacing: 0.01em;
+}
+
+/* Eyebrow label used above section titles in the mocks ("SHOP BY", etc.) */
+.eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  font-weight: 600;
 }

@@ -350,6 +350,10 @@ export interface Product {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Cheapest variant (9K + Lab Standard), incl. GST. Auto-computed by `pnpm refresh:prices`. Drives collection filtering + sorting.
+   */
+  fromPriceInr?: number | null;
   metals?:
     | {
         purity: '9K' | '14K' | '18K' | '22K' | 'Silver925' | 'Platinum';
@@ -853,6 +857,7 @@ export interface ProductsSelect<T extends boolean = true> {
         image?: T;
         id?: T;
       };
+  fromPriceInr?: T;
   metals?:
     | T
     | {

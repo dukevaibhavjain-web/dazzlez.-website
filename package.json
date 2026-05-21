@@ -15,7 +15,8 @@
     "seed:all": "pnpm seed:taxonomy && pnpm seed:rates",
     "seed:test-product": "tsx --env-file=.env.local scripts/seed-test-product.ts",
     "import:excel": "tsx --env-file=.env.local scripts/import-excel.ts",
-    "import:images": "tsx --env-file=.env.local scripts/import-images.ts"
+    "import:images": "tsx --env-file=.env.local scripts/import-images.ts",
+    "refresh:prices": "tsx --env-file=.env.local scripts/refresh-prices.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",
