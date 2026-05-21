@@ -47,6 +47,67 @@ export function formatInr(n: number): string {
   return "₹" + n.toLocaleString("en-IN");
 }
 
+/** Full product for the PDP (images + relations populated). */
+export async function getProductBySlug(slug: string) {
+  const payload = await getPayload({ config });
+  const res = await payload.find({
+    collection: "products",
+    where: { slug: { equals: slug } },
+    depth: 2,
+    limit: 1,
+  });
+  return res.docs[0] ?? null;
+}
+
+/** Similar products in the same category (excludes self). Uses stored fromPrice. */
+export async function getSimilarProducts(
+  categoryId: string | number,
+  excludeId: string | number,
+  limit = 4,
+): Promise<ProductCardData[]> {
+  const payload = await getPayload({ config });
+  const res = await payload.find({
+    collection: "products",
+    where: {
+      and: [
+        { category: { equals: categoryId } },
+        { id: { not_equals: excludeId } },
+        { status: { not_equals: "archived" } },
+      ],
+    },
+    depth: 1,
+    limit,
+    sort: "code",
+  });
+  return res.docs.map((doc) => {
+    const p = doc as unknown as {
+      id: string | number; code: string; slug: string; displayName: string;
+      heroImage?: unknown; fromPriceInr?: number;
+      fulfillmentType?: "made_to_order" | "ready_stock";
+    };
+    return {
+      id: p.id, code: p.code, slug: p.slug, displayName: p.displayName,
+      categoryName: null,
+      heroUrl: mediaUrl(p.heroImage), heroAlt: p.displayName,
+      fromPriceInr: p.fromPriceInr ?? null,
+      fulfillmentType: p.fulfillmentType ?? "made_to_order",
+    };
+  });
+}
+
+/** Metal options to show on a PDP: gold purities in the recipe + Silver + Platinum. */
+export function getMetalOptions(product: { metals?: Array<{ purity: string }> }): Array<{ value: Purity; label: string }> {
+  const LABELS: Record<Purity, string> = {
+    "9K": "9K Gold", "14K": "14K Gold", "18K": "18K Gold", "22K": "22K Gold",
+    Silver925: "Silver 925", Platinum: "Platinum",
+  };
+  const golds = (["9K", "14K", "18K", "22K"] as Purity[]).filter((g) =>
+    product.metals?.some((m) => m.purity === g),
+  );
+  const all: Purity[] = [...golds, "Silver925", "Platinum"];
+  return all.map((v) => ({ value: v, label: LABELS[v] }));
+}
+
 export async function getCategories() {
   const payload = await getPayload({ config });
   const res = await payload.find({ collection: "categories", sort: "sortOrder", limit: 100 });
