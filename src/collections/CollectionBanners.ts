@@ -3,7 +3,9 @@ import type { CollectionConfig } from "payload";
 /**
  * CollectionBanners — full-width hero banner per collection page.
  *
- * Managed entirely through Payload Admin → Collections → Collection Banners.
+ * Images are uploaded via the /upload admin tool, then the URL is pasted
+ * into the imageUrl field here. This avoids Payload's built-in upload widget.
+ *
  * Only one banner should be active per category at a time; the data helper
  * picks the most-recently-updated active banner for the given category.
  */
@@ -16,7 +18,7 @@ export const CollectionBanners: CollectionConfig = {
     group: "Collections",
     description:
       "Hero banner shown at the top of each collection page. " +
-      "One active banner per category is displayed — if multiple exist, the most recently updated wins.",
+      "Upload your image at /upload, copy the URL, then paste it into Image URL below.",
   },
   access: { read: () => true },
   fields: [
@@ -48,12 +50,12 @@ export const CollectionBanners: CollectionConfig = {
       },
     },
     {
-      name: "image",
-      type: "upload",
-      relationTo: "media",
+      name: "imageUrl",
+      type: "text",
       required: true,
       admin: {
-        description: "Banner image. Recommended: at least 1400 × 500 px, landscape.",
+        description:
+          "Paste the URL from the /upload tool. Recommended: at least 1400 × 500 px, landscape.",
       },
     },
     {

@@ -361,7 +361,7 @@ export async function getCollectionBanner(
     title: string;
     subtitle?: string;
     description?: string;
-    image?: unknown;
+    imageUrl?: string;
     overlayOpacity?: string;
     ctaText?: string;
     ctaLink?: string;
@@ -372,7 +372,7 @@ export async function getCollectionBanner(
     title: d.title,
     subtitle: d.subtitle ?? null,
     description: d.description ?? null,
-    imageUrl: mediaBannerUrl(d.image),
+    imageUrl: d.imageUrl ?? null,
     imageAlt: d.title,
     overlayOpacity: parseInt(d.overlayOpacity ?? "30", 10),
     ctaText: d.ctaText ?? null,
@@ -408,7 +408,7 @@ export async function getMarketingTiles(
       id: string | number;
       title: string;
       description?: string;
-      image?: unknown;
+      imageUrl?: string;
       ctaText?: string;
       ctaLink?: string;
       backgroundColor?: string;
@@ -419,7 +419,7 @@ export async function getMarketingTiles(
       id: d.id,
       title: d.title,
       description: d.description ?? null,
-      imageUrl: mediaUrl(d.image), // card size is fine for the ~300 px column
+      imageUrl: d.imageUrl ?? null,
       imageAlt: d.title,
       ctaText: d.ctaText ?? null,
       ctaLink: d.ctaLink ?? null,

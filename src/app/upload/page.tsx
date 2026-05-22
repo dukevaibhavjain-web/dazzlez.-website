@@ -183,7 +183,7 @@ export default function UploadPage() {
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
           {/* Header */}
           <div style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
               <span style={{ fontSize: 22, fontWeight: 700, color: "#111827" }}>
                 📷 Media Upload
               </span>
@@ -196,11 +196,32 @@ export default function UploadPage() {
                 </span>
               )}
             </div>
-            <p style={{ color: "#6b7280", fontSize: 14, margin: 0 }}>
-              Drop images here — they&apos;re saved to the Payload media library and resized automatically.
-              Copy the URL and paste it into any banner or tile field in{" "}
-              <a href="/admin" style={{ color: "#2563eb" }}>Payload Admin</a>.
-            </p>
+
+            {/* Workflow guide */}
+            <div style={{
+              background: "#eff6ff", border: "1px solid #bfdbfe",
+              borderRadius: 10, padding: "14px 18px", marginBottom: 8,
+            }}>
+              <p style={{ fontWeight: 600, color: "#1e40af", margin: "0 0 6px", fontSize: 13 }}>
+                How to add a banner or tile image
+              </p>
+              <ol style={{ color: "#1e3a8a", fontSize: 13, margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>
+                <li>Drop your image below → wait for &ldquo;Done&rdquo;</li>
+                <li>Click <strong>Copy URL</strong> on the uploaded card</li>
+                <li>
+                  Go to{" "}
+                  <a href="/admin/collections/collection-banners" target="_blank" style={{ color: "#2563eb" }}>
+                    Collection Banners
+                  </a>{" "}
+                  or{" "}
+                  <a href="/admin/collections/collection-marketing-tiles" target="_blank" style={{ color: "#2563eb" }}>
+                    Marketing Tiles
+                  </a>{" "}
+                  in Payload Admin
+                </li>
+                <li>Paste the URL into the <strong>Image URL</strong> field and save</li>
+              </ol>
+            </div>
           </div>
 
           {/* Drop zone */}
