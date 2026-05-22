@@ -86,6 +86,22 @@ export const CollectionBanners: CollectionConfig = {
         "Drag & drop, click to browse, or paste a URL.",
     ),
 
+    // ── Kept for DB schema compatibility — no longer shown in UI ──────────
+    // Text is rendered below the image, so overlay is unnecessary.
+    {
+      name: "overlayOpacity",
+      type: "select",
+      defaultValue: "0",
+      admin: { hidden: true },
+      options: [
+        { label: "None (0%)", value: "0" },
+        { label: "Subtle (15%)", value: "15" },
+        { label: "Medium (30%)", value: "30" },
+        { label: "Dark (50%)", value: "50" },
+        { label: "Darker (65%)", value: "65" },
+      ],
+    },
+
     // ── Optional CTA ───────────────────────────────────────────────────────
     {
       type: "row",
