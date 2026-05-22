@@ -46,6 +46,16 @@ function mediaUrl(media: unknown): string | null {
   return m.sizes?.card?.url ?? m.url ?? null;
 }
 
+/** Banners and tiles need a wider crop than the 400 px card thumbnail. */
+function mediaBannerUrl(media: unknown): string | null {
+  if (!media || typeof media !== "object") return null;
+  const m = media as {
+    url?: string;
+    sizes?: { og?: { url?: string }; zoom?: { url?: string } };
+  };
+  return m.sizes?.og?.url ?? m.sizes?.zoom?.url ?? m.url ?? null;
+}
+
 export function formatInr(n: number): string {
   return "₹" + n.toLocaleString("en-IN");
 }
@@ -288,4 +298,134 @@ export async function getProductsForCategory(
   });
 
   return { products: paged, total: filtered.length };
+}
+
+// ---------------------------------------------------------------------------
+// Collection page CMS content
+// ---------------------------------------------------------------------------
+
+export type CollectionBannerData = {
+  id: string | number;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  imageAlt: string;
+  /** 0 | 15 | 30 | 50 | 65 — percentage dark overlay on the image */
+  overlayOpacity: number;
+  ctaText: string | null;
+  ctaLink: string | null;
+};
+
+export type MarketingTileData = {
+  id: string | number;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  imageAlt: string;
+  ctaText: string | null;
+  ctaLink: string | null;
+  /** value from select: cream | white | blush | sage | blue | navy | gold */
+  backgroundColor: string;
+  /** Tile is injected into the grid after this many products */
+  insertAfterNthProduct: number;
+  displayOrder: number;
+};
+
+/**
+ * Returns the single active banner for a category, or null if none is
+ * configured. When multiple are active the most-recently-updated wins.
+ */
+export async function getCollectionBanner(
+  categoryId: string | number,
+): Promise<CollectionBannerData | null> {
+  const payload = await getPayload({ config });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (payload as any).find({
+    collection: "collection-banners",
+    where: {
+      and: [
+        { category: { equals: categoryId } },
+        { active: { equals: true } },
+      ],
+    },
+    depth: 1,
+    limit: 1,
+    sort: "-updatedAt",
+  });
+  const doc = res.docs[0];
+  if (!doc) return null;
+
+  const d = doc as unknown as {
+    id: string | number;
+    title: string;
+    subtitle?: string;
+    description?: string;
+    image?: unknown;
+    overlayOpacity?: string;
+    ctaText?: string;
+    ctaLink?: string;
+  };
+
+  return {
+    id: d.id,
+    title: d.title,
+    subtitle: d.subtitle ?? null,
+    description: d.description ?? null,
+    imageUrl: mediaBannerUrl(d.image),
+    imageAlt: d.title,
+    overlayOpacity: parseInt(d.overlayOpacity ?? "30", 10),
+    ctaText: d.ctaText ?? null,
+    ctaLink: d.ctaLink ?? null,
+  };
+}
+
+/**
+ * Returns all active marketing tiles for a category, ordered by displayOrder.
+ * Tiles are injected into the product grid by the collection page.
+ */
+export async function getMarketingTiles(
+  categoryId: string | number,
+): Promise<MarketingTileData[]> {
+  const payload = await getPayload({ config });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (payload as any).find({
+    collection: "collection-marketing-tiles",
+    where: {
+      and: [
+        { category: { equals: categoryId } },
+        { active: { equals: true } },
+      ],
+    },
+    depth: 1,
+    limit: 20,
+    sort: "displayOrder",
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (res.docs as any[]).map((doc) => {
+    const d = doc as {
+      id: string | number;
+      title: string;
+      description?: string;
+      image?: unknown;
+      ctaText?: string;
+      ctaLink?: string;
+      backgroundColor?: string;
+      insertAfterNthProduct?: number;
+      displayOrder?: number;
+    };
+    return {
+      id: d.id,
+      title: d.title,
+      description: d.description ?? null,
+      imageUrl: mediaUrl(d.image), // card size is fine for the ~300 px column
+      imageAlt: d.title,
+      ctaText: d.ctaText ?? null,
+      ctaLink: d.ctaLink ?? null,
+      backgroundColor: d.backgroundColor ?? "cream",
+      insertAfterNthProduct: d.insertAfterNthProduct ?? 6,
+      displayOrder: d.displayOrder ?? 0,
+    };
+  });
 }

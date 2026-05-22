@@ -17,6 +17,8 @@ import { Reviews } from "./collections/Reviews";
 import { FAQs } from "./collections/FAQs";
 import { TrustBadges } from "./collections/TrustBadges";
 import { TryAtHomeLeads } from "./collections/TryAtHomeLeads";
+import { CollectionBanners } from "./collections/CollectionBanners";
+import { CollectionMarketingTiles } from "./collections/CollectionMarketingTiles";
 import { RateDiamond } from "./collections/RateDiamond";
 import { RateGold } from "./collections/RateGold";
 import { Shapes } from "./collections/Shapes";
@@ -78,6 +80,9 @@ export default buildConfig({
     FxRates,
     // Reviews
     Reviews,
+    // Collection content (banners + marketing tiles)
+    CollectionBanners,
+    CollectionMarketingTiles,
     // Site configuration
     FAQs,
     TrustBadges,
