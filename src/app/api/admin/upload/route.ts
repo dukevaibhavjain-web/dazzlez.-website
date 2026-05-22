@@ -41,6 +41,9 @@ export async function POST(req: Request) {
 
     const doc = await payload.create({
       collection: "media",
+      // overrideAccess lets the local API bypass the "must be logged in"
+      // check — safe here because this is a trusted server-side route.
+      overrideAccess: true,
       data: {
         // Strip extension for the alt text default
         alt: file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
