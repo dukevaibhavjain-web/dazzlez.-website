@@ -111,11 +111,64 @@ export const Products: CollectionConfig = {
         },
       ],
     },
-    { name: "heroImage", type: "upload", relationTo: "media" },
+    {
+      type: "row",
+      fields: [
+        { name: "heroImage", type: "upload", relationTo: "media", admin: { width: "70%" } },
+        {
+          name: "defaultGoldColor",
+          type: "select",
+          defaultValue: "yellow",
+          options: [
+            { label: "Yellow Gold", value: "yellow" },
+            { label: "White Gold", value: "white" },
+            { label: "Rose Gold", value: "rose" },
+          ],
+          admin: {
+            width: "30%",
+            description:
+              "Which gold color variant to show by default on the storefront. " +
+              "Gold → Yellow, Silver/Platinum → White. Override per-product if needed.",
+          },
+        },
+      ],
+    },
     {
       name: "gallery",
       type: "array",
-      fields: [{ name: "image", type: "upload", relationTo: "media", required: true }],
+      labels: { singular: "Image", plural: "Images" },
+      admin: {
+        description:
+          "All product images. Tag each with its gold color so the storefront " +
+          "gallery switches images when the customer picks Yellow / White / Rose Gold. " +
+          "Leave color as 'Any' for lifestyle/model shots that look good in all variants.",
+      },
+      fields: [
+        { name: "image", type: "upload", relationTo: "media", required: true },
+        {
+          name: "goldColor",
+          type: "select",
+          defaultValue: "",
+          options: [
+            { label: "Any (lifestyle / color-agnostic)", value: "" },
+            { label: "Yellow Gold", value: "yellow" },
+            { label: "White Gold  (also used for Silver & Platinum)", value: "white" },
+            { label: "Rose Gold", value: "rose" },
+          ],
+          admin: {
+            description: "Which gold color variant this image represents.",
+          },
+        },
+      ],
+    },
+    {
+      name: "imageManager",
+      type: "ui",
+      admin: {
+        components: {
+          Field: "@/components/admin/ProductImageManager",
+        },
+      },
     },
     {
       name: "fromPriceInr",

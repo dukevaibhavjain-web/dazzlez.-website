@@ -7,11 +7,12 @@
  * Selection rules:
  *  1. Filter to .jpg/.jpeg/.png/.webp. Skip .3dm/.stl/.mp4/etc.
  *  2. Categorize:
- *      - lifestyle = filename does NOT contain the product code
- *      - render    = filename contains the product code
+ *      - render    = filename contains the product code  → comes FIRST
+ *      - lifestyle = filename does NOT contain the code  → comes LAST
  *  3. For PNG/JPG duplicates of same shot — pick the larger file ("better").
- *  4. Order: lifestyle first, then renders in numerical order, then others.
- *  5. Take first 8.
+ *  4. Order: renders in numerical order (1, 2, … 13), then lifestyle, then others.
+ *     First render (1) becomes the hero — the Yellow Gold catalogue shot.
+ *  5. Take first MAX_IMAGES_PER_PRODUCT (16 to fit all 13 renders + lifestyle).
  *
  * Idempotent: re-running skips images whose filename + product is already
  * uploaded.
@@ -29,7 +30,7 @@ import config from "../src/payload.config.js";
 
 const DEFAULT_FILE =
   "C:/Users/Vaibhav/Desktop/Dazzlez Co/DESIGN/Chetan/2025 designs/52 RINGS.zip";
-const MAX_IMAGES_PER_PRODUCT = 8;
+const MAX_IMAGES_PER_PRODUCT = 16; // 13 renders (all gold colors) + up to 3 lifestyle
 const PRODUCT_CODE_REGEX = /^[A-Z]+-\d+$/i; // e.g. RR-001, ER-001
 
 function isImageFile(filename: string): boolean {
@@ -67,7 +68,7 @@ function selectImages(folderPath: string, productCode: string, max: number): str
       order = m ? parseInt(m[1], 10) : 500;
     } else if (/^\d+\.\d+/.test(lower) || /lifestyle|model|hand|wear/i.test(lower)) {
       kind = "lifestyle";
-      order = 0; // lifestyle always first; alphabetical within
+      order = 0; // lifestyle sorts first within its group; group itself comes last
     }
 
     const entry: Selected = { filePath: full, size: stat.size, kind, order };
@@ -82,8 +83,9 @@ function selectImages(folderPath: string, productCode: string, max: number): str
     candidates.push(group[0]);
   }
 
-  // Final order: kind priority (lifestyle=0, render=1, other=2) then order then path
-  const kindWeight = { lifestyle: 0, render: 1, other: 2 } as const;
+  // Final order: renders first (hero = render (1) = Yellow Gold catalogue shot),
+  // then lifestyle shots, then others. kindWeight drives the group order.
+  const kindWeight = { render: 0, lifestyle: 1, other: 2 } as const;
   candidates.sort((a, b) => {
     const kw = kindWeight[a.kind] - kindWeight[b.kind];
     if (kw !== 0) return kw;
@@ -236,13 +238,23 @@ async function main() {
       mediaIds.push(created.id);
     }
 
-    // Update product: hero = first, gallery = rest
+    // Determine defaultGoldColor from the product's metal recipe:
+    //   Gold purities (any K) → "yellow"  (Yellow Gold is the standard catalogue colour)
+    //   Silver 925 or Platinum only  → "white"  (white-gold renders are closest match)
+    // Admin can always override this in the Product edit page.
+    const metals = (product as unknown as { metals?: Array<{ purity: string }> }).metals ?? [];
+    const hasGold = metals.some((m) => /^\d+K$/i.test(m.purity));
+    const defaultGoldColor = hasGold ? "yellow" : "white";
+
+    // Update product: hero = first render (1) = Yellow Gold catalogue shot, gallery = rest.
+    // goldColor is left blank ("any") — admin uses the Image Manager UI to tag per colour.
     await payload.update({
       collection: "products",
       id: product.id,
       data: {
-        heroImage: mediaIds[0],
-        gallery: mediaIds.slice(1).map((id) => ({ image: id })),
+        heroImage: mediaIds[0] as number,
+        defaultGoldColor,
+        gallery: mediaIds.slice(1).map((id) => ({ image: id as number, goldColor: "" as const })),
       },
     });
 

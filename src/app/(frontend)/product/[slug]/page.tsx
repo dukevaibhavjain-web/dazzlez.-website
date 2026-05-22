@@ -5,9 +5,9 @@ import {
   getSimilarProducts,
   getMetalOptions,
 } from "@/lib/storefront/catalog";
-import { ProductGallery, type GalleryImage } from "@/components/storefront/ProductGallery";
-import { ProductBuyBox } from "@/components/storefront/ProductBuyBox";
+import { ProductConfigurator } from "@/components/storefront/ProductConfigurator";
 import { ProductCard } from "@/components/storefront/ProductCard";
+import type { GalleryImage, GoldColor } from "@/components/storefront/ProductGallery";
 
 // Cache the static shell for 5 min (ISR). Live prices are fetched client-side
 // by the buy-box, so caching the page doesn't stale the pricing.
@@ -41,13 +41,25 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const product = (await getProductBySlug(slug)) as any;
   if (!product) notFound();
 
+  // Hero image: color-agnostic (shown for all variants as fallback).
   const images: GalleryImage[] = [];
   const heroU = imgUrl(product.heroImage);
-  if (heroU) images.push({ url: heroU, alt: product.displayName });
+  if (heroU) images.push({ url: heroU, alt: product.displayName, goldColor: "" });
+
+  // Gallery: carry through the goldColor tag set by admin in Image Manager.
   for (const g of product.gallery ?? []) {
     const u = imgUrl(g.image);
-    if (u) images.push({ url: u, alt: product.displayName });
+    if (u) {
+      images.push({
+        url: u,
+        alt: product.displayName,
+        goldColor: (g.goldColor ?? "") as GoldColor,
+      });
+    }
   }
+
+  // Default gold color from admin (yellow for gold, white for silver/platinum).
+  const defaultGoldColor: GoldColor = (product.defaultGoldColor ?? "yellow") as GoldColor;
 
   const categoryId =
     typeof product.category === "object" ? product.category?.id : product.category;
@@ -59,19 +71,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-      {/* Gallery + Buy box */}
-      <div className="grid lg:grid-cols-2 gap-10">
-        <ProductGallery images={images} />
-        <ProductBuyBox
-          code={product.code}
-          displayName={product.displayName}
-          metalOptions={metalOptions}
-          isSolitaire={!!product.isSolitaire}
-          isRing={!!product.isRing}
-          initialMetal={sp.metal}
-          initialTier={sp.diamond}
-        />
-      </div>
+      {/* Gallery + Buy box — wrapped in ProductConfigurator to share goldColor state */}
+      <ProductConfigurator
+        images={images}
+        code={product.code}
+        displayName={product.displayName}
+        metalOptions={metalOptions}
+        isSolitaire={!!product.isSolitaire}
+        isRing={!!product.isRing}
+        initialMetal={sp.metal}
+        initialTier={sp.diamond}
+        defaultGoldColor={defaultGoldColor}
+      />
 
       {/* Detail accordions */}
       <div className="mt-12 max-w-3xl space-y-3">
@@ -124,7 +135,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
         <details className="border border-cream-200 rounded-lg p-4">
           <summary className="font-display text-lg text-navy cursor-pointer">
-            Made to Order & Shipping
+            Made to Order &amp; Shipping
           </summary>
           <p className="mt-3 text-sm text-ink/80 leading-relaxed">
             Most pieces are crafted to order in approximately 10–14 days. You&apos;ll receive a

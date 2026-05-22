@@ -344,9 +344,20 @@ export interface Product {
    */
   stockQuantity?: number | null;
   heroImage?: (number | null) | Media;
+  /**
+   * Which gold color variant to show by default on the storefront. Gold → Yellow, Silver/Platinum → White. Override per-product if needed.
+   */
+  defaultGoldColor?: ('yellow' | 'white' | 'rose') | null;
+  /**
+   * All product images. Tag each with its gold color so the storefront gallery switches images when the customer picks Yellow / White / Rose Gold. Leave color as 'Any' for lifestyle/model shots that look good in all variants.
+   */
   gallery?:
     | {
         image: number | Media;
+        /**
+         * Which gold color variant this image represents.
+         */
+        goldColor?: ('' | 'yellow' | 'white' | 'rose') | null;
         id?: string | null;
       }[]
     | null;
@@ -851,10 +862,12 @@ export interface ProductsSelect<T extends boolean = true> {
   fulfillmentType?: T;
   stockQuantity?: T;
   heroImage?: T;
+  defaultGoldColor?: T;
   gallery?:
     | T
     | {
         image?: T;
+        goldColor?: T;
         id?: T;
       };
   fromPriceInr?: T;

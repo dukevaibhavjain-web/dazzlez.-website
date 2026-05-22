@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { GoldColor } from "@/components/storefront/ProductGallery";
 
 const WA_NUMBER = "919829115205";
+
+/** Metals that have gold color variants (Yellow / White / Rose). */
+const GOLD_PURITIES = new Set(["9K", "14K", "18K", "22K"]);
 
 type MetalOption = { value: string; label: string };
 type TierKey = "natural" | "lab-premium" | "lab-standard";
@@ -27,6 +31,12 @@ const CARATS = [
   { value: "3", label: "3.00 ct" },
 ];
 
+const GOLD_COLORS: Array<{ value: GoldColor; label: string; swatch: string }> = [
+  { value: "yellow", label: "Yellow Gold", swatch: "#E8C44D" },
+  { value: "white",  label: "White Gold",  swatch: "#D0D0D0" },
+  { value: "rose",   label: "Rose Gold",   swatch: "#D4927A" },
+];
+
 function inr(n: number) {
   return "₹" + n.toLocaleString("en-IN");
 }
@@ -41,6 +51,8 @@ export function ProductBuyBox({
   isRing,
   initialMetal,
   initialTier,
+  defaultGoldColor = "yellow",
+  onGoldColorChange,
 }: {
   code: string;
   displayName: string;
@@ -49,6 +61,10 @@ export function ProductBuyBox({
   isRing: boolean;
   initialMetal?: string;
   initialTier?: string;
+  /** Default color pre-selected for this product (from admin field). */
+  defaultGoldColor?: GoldColor;
+  /** Notifies parent (ProductConfigurator) when gold color changes. */
+  onGoldColorChange?: (color: GoldColor) => void;
 }) {
   // Default metal: the one we arrived with (from a card), else the cheapest
   // available metal (matches the collection "from" price), else first option.
@@ -60,14 +76,36 @@ export function ProductBuyBox({
   const defaultTier: TierKey = (TIER_KEYS as string[]).includes(initialTier ?? "")
     ? (initialTier as TierKey)
     : "lab-standard";
+
   const [metal, setMetal] = useState(defaultMetal);
   const [tier, setTier] = useState<TierKey>(defaultTier);
   const [size, setSize] = useState("");
   const [carat, setCarat] = useState("");
   const [engraving, setEngraving] = useState("");
+  const [goldColor, setGoldColorState] = useState<GoldColor>(defaultGoldColor);
   const [data, setData] = useState<PdpResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState(false);
+
+  // Is the currently selected metal a gold purity? (shows color picker)
+  const isGoldMetal = GOLD_PURITIES.has(metal);
+
+  // When metal switches away from gold, revert to white (silver/platinum
+  // use white-gold images). When switching back to gold, restore default.
+  useEffect(() => {
+    const next: GoldColor = isGoldMetal ? defaultGoldColor : "white";
+    setGoldColorState(next);
+    onGoldColorChange?.(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metal]);
+
+  const setGoldColor = useCallback(
+    (c: GoldColor) => {
+      setGoldColorState(c);
+      onGoldColorChange?.(c);
+    },
+    [onGoldColorChange],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -100,9 +138,12 @@ export function ProductBuyBox({
 
   const waLink = useMemo(() => {
     const metalLabel = metalOptions.find((m) => m.value === metal)?.label ?? metal;
+    const colorLabel = isGoldMetal
+      ? GOLD_COLORS.find((c) => c.value === goldColor)?.label ?? ""
+      : "";
     const parts = [
       `Hi Dazzlez, I'm interested in ${displayName} (${code}).`,
-      `Metal: ${metalLabel}`,
+      `Metal: ${metalLabel}${colorLabel ? ` — ${colorLabel}` : ""}`,
       `Diamond: ${TIER_LABEL[tier]}`,
       size ? `Ring size: ${size}` : "",
       carat ? `Solitaire: ${carat}ct` : "",
@@ -111,19 +152,19 @@ export function ProductBuyBox({
       "Can you help me with this?",
     ].filter(Boolean);
     return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(parts.join("\n"))}`;
-  }, [code, displayName, metal, metalOptions, tier, size, carat, engraving, selectedTotal]);
+  }, [code, displayName, metal, metalOptions, tier, size, carat, engraving, selectedTotal, goldColor, isGoldMetal]);
 
   const addToCart = useCallback(() => {
     try {
       const cart = JSON.parse(localStorage.getItem("dazzlez_cart") ?? "[]");
-      cart.push({ code, displayName, metal, tier, size, carat, engraving, qty: 1, addedAt: Date.now() });
+      cart.push({ code, displayName, metal, goldColor, tier, size, carat, engraving, qty: 1, addedAt: Date.now() });
       localStorage.setItem("dazzlez_cart", JSON.stringify(cart));
       setAdded(true);
       setTimeout(() => setAdded(false), 2500);
     } catch {
       /* ignore */
     }
-  }, [code, displayName, metal, tier, size, carat, engraving]);
+  }, [code, displayName, metal, goldColor, tier, size, carat, engraving]);
 
   const savingsVsNatural = (t: number) =>
     naturalTotal && naturalTotal > 0 ? Math.round((1 - t / naturalTotal) * 100) : 0;
@@ -177,9 +218,43 @@ export function ProductBuyBox({
         </div>
       </div>
 
+      {/* Gold color selector — only for gold purities */}
+      {isGoldMetal && (
+        <div className="mt-4">
+          <p className="eyebrow mb-2">Gold Colour</p>
+          <div className="flex gap-3">
+            {GOLD_COLORS.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setGoldColor(c.value)}
+                title={c.label}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  goldColor === c.value
+                    ? "border-navy bg-navy/5 text-navy font-medium"
+                    : "border-cream-200 hover:border-gold/60 text-ink"
+                }`}
+              >
+                <span
+                  className="w-3.5 h-3.5 rounded-full inline-block shrink-0 border border-black/10"
+                  style={{ background: c.swatch }}
+                />
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Silver / Platinum plating note */}
+      {!isGoldMetal && (
+        <p className="mt-3 text-[11px] text-muted italic leading-relaxed">
+          Want a specific plating colour (yellow / rose tone)? Mention it in the engraving field below or on WhatsApp — our team will confirm.
+        </p>
+      )}
+
       {/* Natural vs Lab — the transparency widget */}
       <div className="mt-6">
-        <p className="eyebrow mb-2">Diamond — compare & choose</p>
+        <p className="eyebrow mb-2">Diamond — compare &amp; choose</p>
         <div className="grid grid-cols-3 gap-2">
           {(["natural", "lab-premium", "lab-standard"] as TierKey[]).map((t) => {
             const v = data?.variants?.[t];
