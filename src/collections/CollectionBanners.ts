@@ -55,7 +55,17 @@ export const CollectionBanners: CollectionConfig = {
       required: true,
       admin: {
         description:
-          "Paste the URL from the /upload tool. Recommended: at least 1400 × 500 px, landscape.",
+          "Desktop banner image URL (from /upload). Recommended: 1400 × 500 px landscape.",
+      },
+    },
+    {
+      name: "mobileImageUrl",
+      type: "text",
+      admin: {
+        description:
+          "Optional separate image for mobile screens — shown on screens ≤ 640 px wide. " +
+          "Upload a portrait/square crop at /upload and paste the URL here. " +
+          "If left blank, the desktop image is used on all screen sizes.",
       },
     },
     {

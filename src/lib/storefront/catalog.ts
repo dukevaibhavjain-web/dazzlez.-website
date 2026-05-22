@@ -310,9 +310,9 @@ export type CollectionBannerData = {
   subtitle: string | null;
   description: string | null;
   imageUrl: string | null;
+  /** Separate portrait/square crop shown on mobile (≤640 px). Falls back to imageUrl. */
+  mobileImageUrl: string | null;
   imageAlt: string;
-  /** 0 | 15 | 30 | 50 | 65 — percentage dark overlay on the image */
-  overlayOpacity: number;
   ctaText: string | null;
   ctaLink: string | null;
 };
@@ -362,7 +362,7 @@ export async function getCollectionBanner(
     subtitle?: string;
     description?: string;
     imageUrl?: string;
-    overlayOpacity?: string;
+    mobileImageUrl?: string;
     ctaText?: string;
     ctaLink?: string;
   };
@@ -373,8 +373,8 @@ export async function getCollectionBanner(
     subtitle: d.subtitle ?? null,
     description: d.description ?? null,
     imageUrl: d.imageUrl ?? null,
+    mobileImageUrl: d.mobileImageUrl ?? null,
     imageAlt: d.title,
-    overlayOpacity: parseInt(d.overlayOpacity ?? "30", 10),
     ctaText: d.ctaText ?? null,
     ctaLink: d.ctaLink ?? null,
   };

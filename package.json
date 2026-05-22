@@ -19,7 +19,8 @@
     "refresh:prices": "tsx --env-file=.env.local scripts/refresh-prices.ts",
     "seed:reviews": "tsx --env-file=.env.local scripts/seed-reviews.ts",
     "seed:trust-badges": "tsx --env-file=.env.local scripts/seed-trust-badges.ts",
-    "seed:faqs": "tsx --env-file=.env.local scripts/seed-faqs.ts"
+    "seed:faqs": "tsx --env-file=.env.local scripts/seed-faqs.ts",
+    "migrate": "payload migrate --env-file=.env.local"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",
