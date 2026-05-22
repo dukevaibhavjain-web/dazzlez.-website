@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getPayload } from "payload";
+import config from "@payload-config";
 import {
   getProductBySlug,
   getSimilarProducts,
@@ -7,6 +9,14 @@ import {
 } from "@/lib/storefront/catalog";
 import { ProductConfigurator } from "@/components/storefront/ProductConfigurator";
 import { ProductCard } from "@/components/storefront/ProductCard";
+import { ReviewsSection, type ReviewDoc } from "@/components/storefront/ReviewsSection";
+import { TryAtHomeCard, type TryAtHomeSettings } from "@/components/storefront/TryAtHomeCard";
+import { FAQSection, type FAQItem } from "@/components/storefront/FAQSection";
+import {
+  MatchAndShine,
+  type ComplementaryProduct,
+} from "@/components/storefront/MatchAndShine";
+import { StickyPDPBar } from "@/components/storefront/StickyPDPBar";
 import type { GalleryImage, GoldColor } from "@/components/storefront/ProductGallery";
 
 // Cache the static shell for 5 min (ISR). Live prices are fetched client-side
@@ -66,10 +76,120 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const similar = categoryId ? await getSimilarProducts(categoryId, product.id, 4) : [];
   const metalOptions = getMetalOptions(product);
 
+  const payload = await getPayload({ config });
+
+  // ── Complementary products (bidirectional) ─────────────────────────────
+  // Forward: products explicitly linked on THIS product's Match & Shine tab.
+  const forwardRaw: any[] = (product.complementaryProducts as any[]) ?? [];
+  const forwardItems: ComplementaryProduct[] = forwardRaw
+    .filter((p: any) => p && typeof p === "object" && p.slug)
+    .map((p: any) => ({
+      slug: p.slug,
+      displayName: p.displayName ?? "",
+      heroUrl: imgUrl(p.heroImage, "zoom"),
+      fromPriceInr: p.fromPriceInr ?? null,
+    }));
+
+  // Reverse: products that have THIS product in their complementaryProducts.
+  // This makes pairings bidirectional without double-writing data.
+  const reverseResult = await payload.find({
+    collection: "products",
+    where: { complementaryProducts: { equals: product.id } },
+    depth: 2,
+    limit: 10,
+  });
+  const forwardSlugs = new Set(forwardItems.map((p) => p.slug));
+  const reverseItems: ComplementaryProduct[] = (reverseResult.docs as any[])
+    .filter((p: any) => p.slug && p.slug !== product.slug && !forwardSlugs.has(p.slug))
+    .map((p: any) => ({
+      slug: p.slug,
+      displayName: p.displayName ?? "",
+      heroUrl: imgUrl(p.heroImage, "zoom"),
+      fromPriceInr: p.fromPriceInr ?? null,
+    }));
+
+  // Merge: forward first (intentional order), then reverse fills remaining slots.
+  const recommendations: ComplementaryProduct[] = [
+    ...forwardItems,
+    ...reverseItems,
+  ].slice(0, 3);
+
+  // Fetch trust badges (site-wide, cached via ISR)
+  const trustResult = await payload.find({
+    collection: "trust-badges",
+    where: { active: { equals: true } },
+    sort: "order",
+    limit: 10,
+    depth: 0,
+  });
+  const trustBadges = trustResult.docs.map((b) => ({
+    id: b.id,
+    icon: (b as unknown as { icon: string }).icon,
+    label: (b as unknown as { label: string }).label,
+    tooltip: (b as unknown as { tooltip?: string }).tooltip ?? null,
+  }));
+
+  // Fetch Try at Home global settings
+  const tahRaw = (await payload.findGlobal({ slug: "try-at-home-settings" })) as any;
+  const tryAtHomeSettings: TryAtHomeSettings | null = tahRaw?.enabled
+    ? {
+        title: tahRaw.title || "Try at Home",
+        description: tahRaw.description || "",
+        buttonText: tahRaw.buttonText || "Request a Home Trial",
+        imageUrl: imgUrl(tahRaw.image, "zoom"),
+        disclaimer: tahRaw.disclaimer ?? null,
+      }
+    : null;
+
+  // Fetch approved reviews for this product
+  const reviewsResult = await payload.find({
+    collection: "reviews",
+    where: {
+      and: [
+        { product: { equals: product.id } },
+        { approved: { equals: true } },
+      ],
+    },
+    limit: 50,
+    sort: "-reviewDate",
+    depth: 0,
+  });
+  const reviews = reviewsResult.docs as unknown as ReviewDoc[];
+  const totalReviews = reviewsResult.totalDocs;
+  const avgRating =
+    reviews.length > 0
+      ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10
+      : 0;
+
+  // Fetch active FAQs (site-wide, same for all products)
+  const faqsResult = await payload.find({
+    collection: "faqs",
+    where: { active: { equals: true } },
+    sort: "order",
+    limit: 30,
+    depth: 0,
+  });
+  const faqs: FAQItem[] = faqsResult.docs.map((f) => ({
+    id: f.id,
+    question: (f as unknown as { question: string }).question,
+    answer: (f as unknown as { answer: string }).answer,
+  }));
+
   const shapeName = (d: any) =>
     typeof d?.shape === "object" ? d.shape?.name : null;
 
   return (
+    <>
+      {/* Sticky bar — slides in from top once user scrolls past the buy box */}
+      <StickyPDPBar
+        displayName={product.displayName}
+        code={product.code}
+        heroUrl={imgUrl(product.heroImage, "card")}
+        fromPriceInr={product.fromPriceInr ?? null}
+        avgRating={avgRating}
+        totalReviews={totalReviews}
+      />
+
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       {/* Gallery + Buy box — wrapped in ProductConfigurator to share goldColor state */}
       <ProductConfigurator
@@ -82,6 +202,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
         initialMetal={sp.metal}
         initialTier={sp.diamond}
         defaultGoldColor={defaultGoldColor}
+        avgRating={avgRating}
+        totalReviews={totalReviews}
+        trustBadges={trustBadges}
       />
 
       {/* Detail accordions */}
@@ -145,6 +268,26 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </details>
       </div>
 
+      {/* Match & Shine — complementary products (bidirectional) */}
+      <MatchAndShine recommendations={recommendations} />
+
+      {/* Try at Home — lead-gen card (shown only when enabled in admin) */}
+      {tryAtHomeSettings && (
+        <div className="mt-12 max-w-3xl">
+          <TryAtHomeCard
+            settings={tryAtHomeSettings}
+            productCode={product.code}
+            productName={product.displayName}
+          />
+        </div>
+      )}
+
+      {/* Reviews */}
+      <ReviewsSection reviews={reviews} avgRating={avgRating} />
+
+      {/* FAQs */}
+      <FAQSection faqs={faqs} />
+
       {/* Similar products */}
       {similar.length > 0 && (
         <div className="mt-16">
@@ -160,5 +303,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </div>
       )}
     </div>
+    </>
   );
 }

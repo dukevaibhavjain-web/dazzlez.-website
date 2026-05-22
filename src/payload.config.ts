@@ -13,12 +13,17 @@ import { FxRates } from "./collections/FxRates";
 import { MakingRules } from "./collections/MakingRules";
 import { Occasions } from "./collections/Occasions";
 import { Products } from "./collections/Products";
+import { Reviews } from "./collections/Reviews";
+import { FAQs } from "./collections/FAQs";
+import { TrustBadges } from "./collections/TrustBadges";
+import { TryAtHomeLeads } from "./collections/TryAtHomeLeads";
 import { RateDiamond } from "./collections/RateDiamond";
 import { RateGold } from "./collections/RateGold";
 import { Shapes } from "./collections/Shapes";
 import { SubCategories } from "./collections/SubCategories";
 import { FeatureFlags } from "./globals/FeatureFlags";
 import { SiteSettings } from "./globals/SiteSettings";
+import { TryAtHomeSettings } from "./globals/TryAtHomeSettings";
 import { consoleEmailAdapter } from "./lib/email-console";
 
 const filename = fileURLToPath(import.meta.url);
@@ -71,10 +76,16 @@ export default buildConfig({
     RateDiamond,
     MakingRules,
     FxRates,
+    // Reviews
+    Reviews,
+    // Site configuration
+    FAQs,
+    TrustBadges,
     // CRM
     Customers,
+    TryAtHomeLeads,
   ],
-  globals: [SiteSettings, FeatureFlags],
+  globals: [SiteSettings, FeatureFlags, TryAtHomeSettings],
   editor: lexicalEditor(),
   email: consoleEmailAdapter,
   secret: process.env.PAYLOAD_SECRET || "",

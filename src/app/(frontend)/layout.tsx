@@ -32,7 +32,7 @@ export default function FrontendLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${cormorant.variable} h-full antialiased scroll-smooth`}
     >
       <body
         className="min-h-full flex flex-col bg-cream text-ink"

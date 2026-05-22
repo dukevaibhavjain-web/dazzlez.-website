@@ -171,6 +171,16 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      name: "publishActions",
+      type: "ui",
+      admin: {
+        position: "sidebar",
+        components: {
+          Field: "@/components/admin/ProductPublishButton",
+        },
+      },
+    },
+    {
       name: "fromPriceInr",
       type: "number",
       index: true,
@@ -278,6 +288,24 @@ export const Products: CollectionConfig = {
           fields: [
             { name: "designerNotes", type: "textarea" },
             { name: "remarks", type: "text" },
+          ],
+        },
+        {
+          label: "Match & Shine",
+          description:
+            "Products shown in the 'Match & Shine — Complete the Look' section on this product's PDP. Pick 2–3 pieces that complement this design in metal, style, or occasion.",
+          fields: [
+            {
+              name: "complementaryProducts",
+              type: "relationship",
+              relationTo: "products",
+              hasMany: true,
+              admin: {
+                components: {
+                  Field: "@/components/admin/ProductComplementaryPicker",
+                },
+              },
+            },
           ],
         },
       ],

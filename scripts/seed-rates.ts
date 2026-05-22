@@ -137,13 +137,8 @@ async function main() {
     }
     await payload.create({
       collection: "rate-gold",
-      data: {
-        purity,
-        ratePerG,
-        source: "manual",
-        effectiveAt: now,
-        notes: "Seeded from initial config (24K = ₹162,500/10g @ Jaipur, 2026-05).",
-      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: { purity, ratePerG, source: "manual", effectiveAt: now, notes: "Seeded from initial config (24K = ₹162,500/10g @ Jaipur, 2026-05)." } as any,
     });
     console.log(`  + ${purity}: ₹${ratePerG.toLocaleString("en-IN")}/g`);
   }
@@ -174,13 +169,8 @@ async function main() {
 
       await payload.create({
         collection: "rate-diamond",
-        data: {
-          diamondCategory: catId,
-          ctBandMin: ctMin,
-          ctBandMax: ctMax,
-          ratePerCt: inrRate,
-          effectiveAt: now,
-        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: { diamondCategory: catId, ctBandMin: ctMin, ctBandMax: ctMax, ratePerCt: inrRate, effectiveAt: now } as any,
       });
     }
     console.log(`  + ${dc.name}: ${NUM_SLABS} bands (0→${NUM_SLABS}ct)`);

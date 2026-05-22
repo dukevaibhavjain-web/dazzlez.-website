@@ -124,11 +124,14 @@ function resolveMetalWeight(
   return null;
 }
 
-function lookupDiamondRate(bands: DiamondBand[], perStoneCt: number): number {
-  const match = bands.find((b) => b.min <= perStoneCt && perStoneCt < b.max);
+function lookupDiamondRate(bands: DiamondBand[], weightCt: number): number {
+  const match = bands.find((b) => b.min <= weightCt && weightCt < b.max);
   if (match) return match.ratePerCt;
-  const sorted = [...bands].sort((a, b) => b.max - a.max);
-  return sorted[0]?.ratePerCt ?? 0;
+  // Fallback: if below all bands → use the lowest-min band (smallest stones).
+  //           if above all bands → use the highest-max band (largest stones).
+  const sorted = [...bands].sort((a, b) => a.min - b.min); // ascending by min
+  return (weightCt < (sorted[0]?.min ?? 0) ? sorted[0] : sorted[sorted.length - 1])
+    ?.ratePerCt ?? 0;
 }
 
 export function computePriceFromSnapshot(
@@ -163,9 +166,21 @@ export function computePriceFromSnapshot(
   for (const d of product.diamonds ?? []) {
     let effectiveCt = d.weightCt;
     if (product.isSolitaire && d.role === "solitaire" && solitaireCarat && solitaireCarat > 0) {
+      // Solitaire override: customer picked a carat size. effectiveCt = chosen
+      // carat × stone count (e.g. 1ct × 1 stone = 1ct; 1ct × 3 stones = 3ct).
       effectiveCt = solitaireCarat * d.count;
     }
-    const ratePerCt = lookupDiamondRate(bands, effectiveCt / Math.max(1, d.count));
+
+    // Rate band lookup:
+    //   • Small/other stones: rate is based on TOTAL GROUP weight (weightCt is
+    //     already the sum for all stones in this row). count is display-only.
+    //   • Solitaire: rate is based on PER-STONE weight (effectiveCt / count =
+    //     solitaireCarat) so a 1ct solitaire gets the 1ct rate band.
+    const perLookupCt =
+      d.role === "solitaire"
+        ? effectiveCt / Math.max(1, d.count) // = solitaireCarat
+        : effectiveCt;                        // total group ct for small/other
+    const ratePerCt = lookupDiamondRate(bands, perLookupCt);
     const cost = effectiveCt * ratePerCt;
     diamondCost += cost;
     diamondComponents.push({
@@ -223,7 +238,9 @@ export function computePriceFromSnapshot(
     },
     ...diamondComponents.map((d) => ({
       label: d.role === "solitaire" ? "Solitaire Diamond" : "Diamonds (small)",
-      detail: `${d.weightCt.toFixed(3)}ct${d.count > 1 ? ` × ${d.count}pc` : ""} × ₹${Math.round(d.ratePerCt).toLocaleString("en-IN")}/ct`,
+      // Show total ct as the pricing basis. Count is shown as context only —
+      // it does NOT multiply the price (weightCt is already the total group weight).
+      detail: `${d.weightCt.toFixed(3)}ct total${d.count > 1 ? ` (${d.count} pcs)` : ""} × ₹${Math.round(d.ratePerCt).toLocaleString("en-IN")}/ct`,
       amountInr: d.cost,
     })),
     ...colorStoneComponents.map((cs) => ({

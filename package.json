@@ -16,7 +16,10 @@
     "seed:test-product": "tsx --env-file=.env.local scripts/seed-test-product.ts",
     "import:excel": "tsx --env-file=.env.local scripts/import-excel.ts",
     "import:images": "tsx --env-file=.env.local scripts/import-images.ts",
-    "refresh:prices": "tsx --env-file=.env.local scripts/refresh-prices.ts"
+    "refresh:prices": "tsx --env-file=.env.local scripts/refresh-prices.ts",
+    "seed:reviews": "tsx --env-file=.env.local scripts/seed-reviews.ts",
+    "seed:trust-badges": "tsx --env-file=.env.local scripts/seed-trust-badges.ts",
+    "seed:faqs": "tsx --env-file=.env.local scripts/seed-faqs.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",

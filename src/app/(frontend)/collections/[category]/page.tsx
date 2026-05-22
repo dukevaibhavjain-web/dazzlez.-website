@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import {
   getCategoryBySlug,
@@ -61,7 +62,9 @@ export default async function CollectionPage({ params, searchParams }: Props) {
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
-        <FilterBar shapes={options.shapes} styles={options.styles} metals={options.metals} />
+        <Suspense fallback={<aside className="md:w-60 md:shrink-0" />}>
+          <FilterBar shapes={options.shapes} styles={options.styles} metals={options.metals} />
+        </Suspense>
 
         <div className="flex-1">
           {products.length === 0 ? (

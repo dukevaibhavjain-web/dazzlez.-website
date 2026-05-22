@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GoldColor } from "@/components/storefront/ProductGallery";
+import { ReviewBadge } from "@/components/storefront/ReviewBadge";
 
 const WA_NUMBER = "919829115205";
 
@@ -9,8 +10,10 @@ const WA_NUMBER = "919829115205";
 const GOLD_PURITIES = new Set(["9K", "14K", "18K", "22K"]);
 
 type MetalOption = { value: string; label: string };
+type TrustBadgeItem = { id: number | string; icon: string; label: string; tooltip?: string | null };
 type TierKey = "natural" | "lab-premium" | "lab-standard";
-type Variant = { total: number } | { error: string };
+type LineItem = { label: string; detail?: string; amountInr: number };
+type Variant = { total: number; lineItems: LineItem[] } | { error: string };
 type PdpResponse = {
   ok: boolean;
   variants: Record<TierKey, Variant>;
@@ -37,6 +40,14 @@ const GOLD_COLORS: Array<{ value: GoldColor; label: string; swatch: string }> = 
   { value: "rose",   label: "Rose Gold",   swatch: "#D4927A" },
 ];
 
+/** Hardcoded fallback shown if no trust badges have been seeded yet. */
+const FALLBACK_BADGES: TrustBadgeItem[] = [
+  { id: "fb-1", icon: "✦", label: "BIS Hallmarked", tooltip: null },
+  { id: "fb-2", icon: "✦", label: "IGI / GIA Certified", tooltip: null },
+  { id: "fb-3", icon: "✦", label: "Lifetime Buyback & Exchange", tooltip: null },
+  { id: "fb-4", icon: "✦", label: "Insured Shipping & 30-day Returns", tooltip: null },
+];
+
 function inr(n: number) {
   return "₹" + n.toLocaleString("en-IN");
 }
@@ -53,6 +64,9 @@ export function ProductBuyBox({
   initialTier,
   defaultGoldColor = "yellow",
   onGoldColorChange,
+  avgRating,
+  totalReviews,
+  trustBadges,
 }: {
   code: string;
   displayName: string;
@@ -65,6 +79,9 @@ export function ProductBuyBox({
   defaultGoldColor?: GoldColor;
   /** Notifies parent (ProductConfigurator) when gold color changes. */
   onGoldColorChange?: (color: GoldColor) => void;
+  avgRating?: number;
+  totalReviews?: number;
+  trustBadges?: TrustBadgeItem[];
 }) {
   // Default metal: the one we arrived with (from a card), else the cheapest
   // available metal (matches the collection "from" price), else first option.
@@ -166,11 +183,22 @@ export function ProductBuyBox({
     }
   }, [code, displayName, metal, goldColor, tier, size, carat, engraving]);
 
+  // Listen for the sticky bar's "Add to Cart" button — it fires this event
+  // so the buy box can handle the actual cart write with current selections.
+  useEffect(() => {
+    const handler = () => addToCart();
+    window.addEventListener("dazzlez:add-to-cart", handler);
+    return () => window.removeEventListener("dazzlez:add-to-cart", handler);
+  }, [addToCart]);
+
   const savingsVsNatural = (t: number) =>
     naturalTotal && naturalTotal > 0 ? Math.round((1 - t / naturalTotal) * 100) : 0;
 
   return (
     <div>
+      {avgRating != null && totalReviews != null && totalReviews > 0 && (
+        <ReviewBadge avgRating={avgRating} totalReviews={totalReviews} />
+      )}
       <h1 className="font-display text-3xl text-navy">{displayName}</h1>
       <p className="text-xs text-muted mt-0.5 tracking-wide">{code}</p>
 
@@ -289,6 +317,45 @@ export function ProductBuyBox({
         </a>
       </div>
 
+      {/* Price Breakup — collapsible, only shown when a price is available */}
+      {selectedTotal != null && (() => {
+        const v = data?.variants?.[tier];
+        const items: LineItem[] = (v && "lineItems" in v) ? v.lineItems : [];
+        if (items.length === 0) return null;
+        return (
+          <details className="mt-4 group border border-cream-200 rounded-lg overflow-hidden">
+            <summary className="flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm font-medium text-ink bg-cream-100/50 hover:bg-cream-100 transition-colors list-none">
+              <span>Price Breakup</span>
+              <span className="flex items-center gap-2">
+                <span className="text-xs text-muted font-normal">incl. GST</span>
+                <span className="text-gold font-semibold">{inr(selectedTotal)}</span>
+                <span className="text-muted text-xs group-open:rotate-180 transition-transform">▾</span>
+              </span>
+            </summary>
+            <div className="px-4 pb-4 pt-3 space-y-2">
+              {items.map((item, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <div className="text-ink/80">
+                    {item.label}
+                    {item.detail && (
+                      <span className="text-muted ml-1">({item.detail})</span>
+                    )}
+                  </div>
+                  <span className="font-medium text-ink shrink-0 ml-4 tabular-nums">{inr(item.amountInr)}</span>
+                </div>
+              ))}
+              <div className="border-t border-cream-200 pt-2.5 mt-1 flex justify-between text-xs font-semibold text-ink">
+                <span>Total (incl. 3% GST)</span>
+                <span className="tabular-nums">{inr(selectedTotal)}</span>
+              </div>
+              <p className="text-[10px] text-muted leading-relaxed pt-0.5">
+                Rates are live and may change slightly by the time of invoicing.
+              </p>
+            </div>
+          </details>
+        );
+      })()}
+
       {/* Ring size */}
       {isRing && (
         <div className="mt-6">
@@ -358,18 +425,20 @@ export function ProductBuyBox({
       </div>
 
       {/* Trust badges */}
-      <div className="mt-7 grid grid-cols-2 gap-3 text-xs text-muted border-t border-cream-200 pt-5">
-        {[
-          "BIS Hallmarked",
-          "IGI / GIA Certified",
-          "Lifetime Buyback & Exchange",
-          "Insured Shipping & 30-day Returns",
-        ].map((b) => (
-          <div key={b} className="flex items-center gap-1.5">
-            <span className="text-gold">✦</span> {b}
-          </div>
-        ))}
-      </div>
+      {(trustBadges ?? FALLBACK_BADGES).length > 0 && (
+        <div className="mt-7 grid grid-cols-2 gap-3 text-xs text-muted border-t border-cream-200 pt-5">
+          {(trustBadges ?? FALLBACK_BADGES).map((b) => (
+            <div
+              key={b.id}
+              className="flex items-center gap-1.5"
+              title={b.tooltip ?? undefined}
+            >
+              <span className="text-gold shrink-0">{b.icon}</span>
+              <span>{b.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

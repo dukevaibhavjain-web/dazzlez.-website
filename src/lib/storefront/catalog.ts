@@ -199,7 +199,8 @@ export async function getProductsForCategory(
   // Pull all products matching the non-price (DB-level) filters. Price is
   // metal-dependent so we compute it in-memory from a single rate snapshot.
   const [res, snapshot] = await Promise.all([
-    payload.find({ collection: "products", where: { and }, depth: 1, limit: 500 }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload.find({ collection: "products", where: { and } as any, depth: 1, limit: 500 }),
     loadRateSnapshot(payload),
   ]);
 

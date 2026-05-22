@@ -81,7 +81,11 @@ export interface Config {
     'rate-diamond': RateDiamond;
     'making-rules': MakingRule;
     'fx-rates': FxRate;
+    reviews: Review;
+    faqs: Faq;
+    'trust-badges': TrustBadge;
     customers: Customer;
+    'try-at-home-leads': TryAtHomeLead;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -102,7 +106,11 @@ export interface Config {
     'rate-diamond': RateDiamondSelect<false> | RateDiamondSelect<true>;
     'making-rules': MakingRulesSelect<false> | MakingRulesSelect<true>;
     'fx-rates': FxRatesSelect<false> | FxRatesSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
+    faqs: FaqsSelect<false> | FaqsSelect<true>;
+    'trust-badges': TrustBadgesSelect<false> | TrustBadgesSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
+    'try-at-home-leads': TryAtHomeLeadsSelect<false> | TryAtHomeLeadsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -115,10 +123,12 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     'feature-flags': FeatureFlag;
+    'try-at-home-settings': TryAtHomeSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'feature-flags': FeatureFlagsSelect<false> | FeatureFlagsSelect<true>;
+    'try-at-home-settings': TryAtHomeSettingsSelect<false> | TryAtHomeSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -404,6 +414,7 @@ export interface Product {
     | null;
   designerNotes?: string | null;
   remarks?: string | null;
+  complementaryProducts?: (number | Product)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -544,6 +555,85 @@ export interface FxRate {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: number;
+  product: number | Product;
+  /**
+   * 1–5 stars
+   */
+  rating: number;
+  title: string;
+  body: string;
+  authorName: string;
+  /**
+   * Date shown on storefront. Defaults to creation date.
+   */
+  reviewDate?: string | null;
+  /**
+   * Verified purchase
+   */
+  verified?: boolean | null;
+  /**
+   * Show publicly
+   */
+  approved?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * FAQ accordion shown on all product pages. Drag rows or set 'order' to control sequence.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faqs".
+ */
+export interface Faq {
+  id: number;
+  question: string;
+  answer: string;
+  category?: ('general' | 'diamonds' | 'pricing' | 'returns' | 'shipping') | null;
+  /**
+   * Lower = appears first
+   */
+  order?: number | null;
+  /**
+   * Uncheck to hide on site
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Configurable trust badges shown on the product page below the Buy button.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trust-badges".
+ */
+export interface TrustBadge {
+  id: number;
+  /**
+   * Emoji or symbol (e.g. ✦ ✓ 🔄 🚚)
+   */
+  icon: string;
+  label: string;
+  /**
+   * Shown on hover — keep under 120 characters.
+   */
+  tooltip?: string | null;
+  /**
+   * Lower = appears first
+   */
+  order?: number | null;
+  /**
+   * Visible on site
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers".
  */
 export interface Customer {
@@ -577,6 +667,34 @@ export interface Customer {
     | null;
   password?: string | null;
   collection: 'customers';
+}
+/**
+ * Home-trial leads from the 'Try at Home' card on product pages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "try-at-home-leads".
+ */
+export interface TryAtHomeLead {
+  id: number;
+  customerName: string;
+  phone: string;
+  email?: string | null;
+  address: string;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  /**
+   * e.g. RR-052
+   */
+  productCode?: string | null;
+  productName?: string | null;
+  status?: ('new' | 'contacted' | 'scheduled' | 'converted' | 'rejected') | null;
+  /**
+   * Internal notes — not visible to the customer
+   */
+  adminNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -655,8 +773,24 @@ export interface PayloadLockedDocument {
         value: number | FxRate;
       } | null)
     | ({
+        relationTo: 'reviews';
+        value: number | Review;
+      } | null)
+    | ({
+        relationTo: 'faqs';
+        value: number | Faq;
+      } | null)
+    | ({
+        relationTo: 'trust-badges';
+        value: number | TrustBadge;
+      } | null)
+    | ({
         relationTo: 'customers';
         value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'try-at-home-leads';
+        value: number | TryAtHomeLead;
       } | null);
   globalSlug?: string | null;
   user:
@@ -901,6 +1035,7 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   designerNotes?: T;
   remarks?: T;
+  complementaryProducts?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -985,6 +1120,48 @@ export interface FxRatesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  product?: T;
+  rating?: T;
+  title?: T;
+  body?: T;
+  authorName?: T;
+  reviewDate?: T;
+  verified?: T;
+  approved?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faqs_select".
+ */
+export interface FaqsSelect<T extends boolean = true> {
+  question?: T;
+  answer?: T;
+  category?: T;
+  order?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trust-badges_select".
+ */
+export interface TrustBadgesSelect<T extends boolean = true> {
+  icon?: T;
+  label?: T;
+  tooltip?: T;
+  order?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "customers_select".
  */
 export interface CustomersSelect<T extends boolean = true> {
@@ -1009,6 +1186,25 @@ export interface CustomersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "try-at-home-leads_select".
+ */
+export interface TryAtHomeLeadsSelect<T extends boolean = true> {
+  customerName?: T;
+  phone?: T;
+  email?: T;
+  address?: T;
+  city?: T;
+  state?: T;
+  pincode?: T;
+  productCode?: T;
+  productName?: T;
+  status?: T;
+  adminNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1110,6 +1306,38 @@ export interface FeatureFlag {
   createdAt?: string | null;
 }
 /**
+ * Controls the 'Try at Home' lead-generation card shown on product pages. Leads are saved under CRM → Try at Home Leads.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "try-at-home-settings".
+ */
+export interface TryAtHomeSetting {
+  id: number;
+  enabled?: boolean | null;
+  /**
+   * Heading shown on the card
+   */
+  title?: string | null;
+  /**
+   * Body text shown below the heading
+   */
+  description?: string | null;
+  /**
+   * CTA button label
+   */
+  buttonText?: string | null;
+  /**
+   * Optional lifestyle image shown on the left of the card (landscape works best)
+   */
+  image?: (number | null) | Media;
+  /**
+   * Optional small-print shown below the form (e.g. 'Available in Jaipur & Delhi only')
+   */
+  disclaimer?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -1151,6 +1379,21 @@ export interface FeatureFlagsSelect<T extends boolean = true> {
   wallet_loyalty_points?: T;
   i18n_hindi?: T;
   i18n_other_languages?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "try-at-home-settings_select".
+ */
+export interface TryAtHomeSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  title?: T;
+  description?: T;
+  buttonText?: T;
+  image?: T;
+  disclaimer?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

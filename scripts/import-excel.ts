@@ -278,7 +278,7 @@ async function main() {
         isSolitaire: d.isSolitaire,
         isRing: sheetCfg.categorySlug === "rings",
         fulfillmentType: "made_to_order",
-        status: "draft",
+        status: "draft" as const,
         metals: d.metals,
         diamonds: d.diamonds.map((dia) => ({
           role: dia.role,
@@ -301,11 +301,13 @@ async function main() {
         await payload.update({
           collection: "products",
           id: existing.docs[0].id,
-          data,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: data as any,
         });
         totalUpdated++;
       } else {
-        await payload.create({ collection: "products", data });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await payload.create({ collection: "products", data: data as any });
         totalCreated++;
       }
     }

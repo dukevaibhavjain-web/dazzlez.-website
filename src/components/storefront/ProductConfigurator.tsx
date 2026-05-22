@@ -13,6 +13,7 @@ import { ProductGallery, type GalleryImage, type GoldColor } from "./ProductGall
 import { ProductBuyBox } from "./ProductBuyBox";
 
 type MetalOption = { value: string; label: string };
+type TrustBadgeItem = { id: number | string; icon: string; label: string; tooltip?: string | null };
 
 export function ProductConfigurator({
   // Gallery
@@ -26,6 +27,9 @@ export function ProductConfigurator({
   initialMetal,
   initialTier,
   defaultGoldColor,
+  avgRating,
+  totalReviews,
+  trustBadges,
 }: {
   images: GalleryImage[];
   code: string;
@@ -36,6 +40,9 @@ export function ProductConfigurator({
   initialMetal?: string;
   initialTier?: string;
   defaultGoldColor: GoldColor;
+  avgRating?: number;
+  totalReviews?: number;
+  trustBadges?: TrustBadgeItem[];
 }) {
   const [goldColor, setGoldColor] = useState<GoldColor>(defaultGoldColor);
 
@@ -52,6 +59,9 @@ export function ProductConfigurator({
         initialTier={initialTier}
         defaultGoldColor={defaultGoldColor}
         onGoldColorChange={setGoldColor}
+        avgRating={avgRating}
+        totalReviews={totalReviews}
+        trustBadges={trustBadges}
       />
     </div>
   );
