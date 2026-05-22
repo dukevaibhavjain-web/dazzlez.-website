@@ -3,22 +3,39 @@ import type { CollectionConfig } from "payload";
 /**
  * CollectionBanners — full-width hero banner per collection page.
  *
- * Images are uploaded via the /upload admin tool, then the URL is pasted
- * into the imageUrl field here. This avoids Payload's built-in upload widget.
+ * The imageUrl and mobileImageUrl fields use a custom inline upload widget
+ * (ImageUploadField) so editors can drag-drop, browse, or paste a URL
+ * directly inside the Payload admin — no separate /upload page needed.
  *
  * Only one banner should be active per category at a time; the data helper
  * picks the most-recently-updated active banner for the given category.
  */
+
+const imageField = (name: string, label: string, description: string, required = false) => ({
+  name,
+  type: "text" as const,
+  required,
+  admin: {
+    description,
+    components: {
+      Field: {
+        path: "@/components/admin/ImageUploadField",
+        exportName: "ImageUploadField",
+      },
+    },
+  },
+});
+
 export const CollectionBanners: CollectionConfig = {
   slug: "collection-banners",
   labels: { singular: "Collection Banner", plural: "Collection Banners" },
   admin: {
     useAsTitle: "title",
-    defaultColumns: ["category", "title", "overlayOpacity", "active"],
+    defaultColumns: ["category", "title", "active"],
     group: "Collections",
     description:
       "Hero banner shown at the top of each collection page. " +
-      "Upload your image at /upload, copy the URL, then paste it into Image URL below.",
+      "Drag & drop an image (or paste a URL) directly into the Image fields below.",
   },
   access: { read: () => true },
   fields: [
@@ -34,12 +51,15 @@ export const CollectionBanners: CollectionConfig = {
       name: "title",
       type: "text",
       required: true,
-      admin: { description: "Large heading displayed over the image." },
+      admin: {
+        description:
+          "Heading shown below the banner image. Appears as the page H1.",
+      },
     },
     {
       name: "subtitle",
       type: "text",
-      admin: { description: "Smaller line shown below the title (tagline or promo)." },
+      admin: { description: "Smaller tagline shown below the title." },
     },
     {
       name: "description",
@@ -49,42 +69,24 @@ export const CollectionBanners: CollectionConfig = {
         rows: 2,
       },
     },
-    {
-      name: "imageUrl",
-      type: "text",
-      required: true,
-      admin: {
-        description:
-          "Desktop banner image URL (from /upload). Recommended: 1400 × 500 px landscape.",
-      },
-    },
-    {
-      name: "mobileImageUrl",
-      type: "text",
-      admin: {
-        description:
-          "Optional separate image for mobile screens — shown on screens ≤ 640 px wide. " +
-          "Upload a portrait/square crop at /upload and paste the URL here. " +
-          "If left blank, the desktop image is used on all screen sizes.",
-      },
-    },
-    {
-      name: "overlayOpacity",
-      type: "select",
-      defaultValue: "30",
-      admin: {
-        description:
-          "Dark overlay applied on top of the image so text stays readable. " +
-          "Increase if your image is light-coloured.",
-      },
-      options: [
-        { label: "None (0%)", value: "0" },
-        { label: "Subtle (15%)", value: "15" },
-        { label: "Medium (30%)", value: "30" },
-        { label: "Dark (50%)", value: "50" },
-        { label: "Darker (65%)", value: "65" },
-      ],
-    },
+
+    // ── Images ─────────────────────────────────────────────────────────────
+    imageField(
+      "imageUrl",
+      "Desktop Image",
+      "Desktop banner (landscape). Recommended: 1400 × 500 px. " +
+        "Drag & drop, click to browse, or paste a URL.",
+      true,
+    ),
+    imageField(
+      "mobileImageUrl",
+      "Mobile Image",
+      "Optional portrait/square crop shown on screens ≤ 640 px wide. " +
+        "Recommended: 640 × 800 px. Falls back to the desktop image if left empty. " +
+        "Drag & drop, click to browse, or paste a URL.",
+    ),
+
+    // ── Optional CTA ───────────────────────────────────────────────────────
     {
       type: "row",
       fields: [
@@ -103,6 +105,8 @@ export const CollectionBanners: CollectionConfig = {
         },
       ],
     },
+
+    // ── Visibility ─────────────────────────────────────────────────────────
     {
       name: "active",
       type: "checkbox",

@@ -4,8 +4,8 @@ import type { CollectionConfig } from "payload";
  * CollectionMarketingTiles — full-width promotional tiles injected into the
  * product grid at configurable positions.
  *
- * Images are uploaded via the /upload admin tool, then the URL is pasted
- * into the imageUrl field here. This avoids Payload's built-in upload widget.
+ * The imageUrl field uses the inline ImageUploadField component so editors can
+ * drag-drop, browse, or paste a URL directly in Payload admin.
  *
  * Each tile appears spanning the full grid width after the Nth product.
  * Example: insertAfterNthProduct = 6 → tile appears between the 6th and 7th
@@ -20,7 +20,7 @@ export const CollectionMarketingTiles: CollectionConfig = {
     group: "Collections",
     description:
       "Full-width promotional tiles inserted into the product grid at configurable positions. " +
-      "Upload images at /upload, copy the URL, paste into Image URL below.",
+      "Drag & drop an image (or paste a URL) directly into the Image field below.",
   },
   access: { read: () => true },
   fields: [
@@ -50,8 +50,13 @@ export const CollectionMarketingTiles: CollectionConfig = {
       name: "imageUrl",
       type: "text",
       admin: {
-        description:
-          "Paste the URL from the /upload tool. Recommended: 600 × 400 px.",
+        description: "Tile image. Recommended: 600 × 400 px. Drag & drop, browse, or paste a URL.",
+        components: {
+          Field: {
+            path: "@/components/admin/ImageUploadField",
+            exportName: "ImageUploadField",
+          },
+        },
       },
     },
     {
