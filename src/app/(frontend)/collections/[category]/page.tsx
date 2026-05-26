@@ -13,8 +13,12 @@ import {
 } from "@/lib/storefront/catalog";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { FilterBar } from "@/components/storefront/FilterBar";
+import { ActiveFilterChips } from "@/components/storefront/ActiveFilterChips";
+import { Pagination } from "@/components/storefront/Pagination";
 import { CollectionBanner } from "@/components/storefront/CollectionBanner";
 import { CollectionMarketingTile } from "@/components/storefront/CollectionMarketingTile";
+
+const PAGE_SIZE = 48;
 
 type Props = {
   params: Promise<{ category: string }>;
@@ -41,6 +45,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const cat = await getCategoryBySlug(category);
   if (!cat) notFound();
 
+  const page = Math.max(1, Number(str(sp.page) ?? 1) || 1);
   const metalCsv = str(sp.metal);
   const filters: CollectionFilters = {
     shape: str(sp.shape),
@@ -52,6 +57,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     maxPrice: str(sp.max) ? Number(str(sp.max)) : undefined,
     inStock: str(sp.inStock) === "1",
     sort: (str(sp.sort) as CollectionFilters["sort"]) ?? "featured",
+    page,
   };
 
   const [{ products, total }, options, banner, tiles] = await Promise.all([
@@ -76,24 +82,25 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const gridItems: GridItem[] = [];
   products.forEach((p, idx) => {
     gridItems.push({ type: "product", data: p });
-    const afterThis = tilesByPos.get(idx + 1);
+    // tiles are keyed to absolute position across all pages
+    const absIdx = (page - 1) * PAGE_SIZE + idx + 1;
+    const afterThis = tilesByPos.get(absIdx);
     if (afterThis) {
       for (const tile of afterThis) gridItems.push({ type: "tile", data: tile });
     }
   });
 
+  const basePath = `/collections/${category}`;
+
   return (
     <>
-      {/* ── Full-width image banner (image only — no text overlay) ───────── */}
+      {/* Full-width banner image */}
       <CollectionBanner banner={banner} />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
-        {/* ── Page header — always below the image ────────────────────────
-            When a banner is configured, its title/subtitle/description/CTA
-            are shown here instead of the plain category name.              */}
+        {/* Page header — always below the image */}
         <div className="text-center mb-10">
           <p className="eyebrow">Shop By</p>
-
           <h1 className="font-display text-4xl md:text-5xl text-navy mt-1">
             {banner?.title ?? cat.name}
           </h1>
@@ -103,48 +110,64 @@ export default async function CollectionPage({ params, searchParams }: Props) {
               {banner.subtitle}
             </p>
           )}
-
           {banner?.description && (
             <p className="text-muted mt-1 text-sm max-w-xl mx-auto leading-relaxed">
               {banner.description}
             </p>
           )}
-
           {banner?.ctaText && banner?.ctaLink && (
             <Link
               href={banner.ctaLink}
-              className="inline-block mt-4 px-6 py-2.5 bg-navy text-cream text-sm font-semibold rounded hover:bg-navy-700 transition-colors"
+              className="inline-block mt-4 px-6 py-2.5 bg-navy text-cream text-sm font-semibold rounded hover:bg-navy/90 transition-colors"
             >
               {banner.ctaText}
             </Link>
           )}
-
           <p className="text-muted mt-3 text-sm">{total} designs</p>
         </div>
 
-        {/* ── Filter sidebar + product grid ───────────────────────────────── */}
+        {/* Filter bar (mobile trigger + desktop sidebar) + product grid */}
         <div className="flex flex-col md:flex-row gap-8">
-          <Suspense fallback={<aside className="md:w-60 md:shrink-0" />}>
-            <FilterBar shapes={options.shapes} styles={options.styles} metals={options.metals} />
+          <Suspense fallback={<aside className="hidden md:block md:w-60 md:shrink-0" />}>
+            <FilterBar
+              shapes={options.shapes}
+              styles={options.styles}
+              metals={options.metals}
+            />
           </Suspense>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
+            {/* Active filter chips — desktop + mobile */}
+            <Suspense fallback={null}>
+              <ActiveFilterChips shapes={options.shapes} styles={options.styles} />
+            </Suspense>
+
             {products.length === 0 ? (
               <p className="text-center text-muted py-20">
                 No products match these filters. Try clearing some.
               </p>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {gridItems.map((item, idx) =>
-                  item.type === "product" ? (
-                    <ProductCard key={item.data.id} product={item.data} />
-                  ) : (
-                    <div key={`tile-${item.data.id}-${idx}`} className="col-span-2 lg:col-span-3">
-                      <CollectionMarketingTile tile={item.data} />
-                    </div>
-                  ),
-                )}
-              </div>
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {gridItems.map((item, idx) =>
+                    item.type === "product" ? (
+                      <ProductCard key={item.data.id} product={item.data} />
+                    ) : (
+                      <div key={`tile-${item.data.id}-${idx}`} className="col-span-2 lg:col-span-3">
+                        <CollectionMarketingTile tile={item.data} />
+                      </div>
+                    ),
+                  )}
+                </div>
+
+                <Pagination
+                  page={page}
+                  total={total}
+                  pageSize={PAGE_SIZE}
+                  basePath={basePath}
+                  searchParams={sp}
+                />
+              </>
             )}
           </div>
         </div>
