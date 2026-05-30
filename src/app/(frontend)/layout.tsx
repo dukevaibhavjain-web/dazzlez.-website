@@ -3,6 +3,7 @@ import { Geist, Cormorant_Garamond } from "next/font/google";
 import "./styles.css";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
+import { TrackingScripts } from "@/components/storefront/TrackingScripts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,11 +18,24 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: {
-    default: "Dazzlez — Fine Lab-Grown & Natural Diamond Jewellery",
-    template: "%s | Dazzlez",
+    default: "The Dazzlez — Pure & Guilt Free Jewelry",
+    template: "%s | The Dazzlez",
   },
   description:
     "Celebrate your moments with personal jewellery. Transparent pricing, certified diamonds, made to order.",
+  icons: {
+    icon: [
+      { url: "/logo-square.jpg", type: "image/jpeg" },
+    ],
+    apple: "/logo-square.jpg",
+    shortcut: "/logo-square.jpg",
+  },
+  openGraph: {
+    images: [{ url: "/logo-square.jpg", width: 1080, height: 1080, alt: "The Dazzlez" }],
+    siteName: "The Dazzlez",
+    locale: "en_IN",
+    type: "website",
+  },
 };
 
 export default function FrontendLayout({
@@ -38,6 +52,7 @@ export default function FrontendLayout({
         className="min-h-full flex flex-col bg-cream text-ink"
         suppressHydrationWarning
       >
+        <TrackingScripts />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

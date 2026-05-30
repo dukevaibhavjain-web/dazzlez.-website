@@ -4,41 +4,33 @@
  *
  * Prices come from the denormalized fromPriceInr field (computed by
  * `pnpm refresh:prices`) so collection pages are fast — no per-request pricing.
+ *
+ * ⚠️  Server-only: imports Payload + Sharp. Never import this file from a
+ *    "use client" component. Use @/lib/storefront/types for shared types.
  */
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { computePriceFromSnapshot, loadRateSnapshot } from "@/lib/pricing";
 import type { ProductForPricing, Purity } from "@/lib/pricing/types";
 
-export type ProductCardData = {
-  id: string | number;
-  code: string;
-  slug: string;
-  displayName: string;
-  categoryName: string | null;
-  heroUrl: string | null;
-  heroAlt: string;
-  fromPriceInr: number | null;
-  /** The metal that produced fromPriceInr — carried into the PDP so its
-   * headline price matches what the card showed. */
-  fromMetal: Purity | null;
-  fulfillmentType: "made_to_order" | "ready_stock";
-};
+// Re-export all shared types so existing imports from catalog.ts keep working
+export type {
+  ProductCardData,
+  CollectionFilters,
+  FilterOption,
+  MarketingTileData,
+} from "@/lib/storefront/types";
+export { formatInr } from "@/lib/storefront/types";
 
-export type CollectionFilters = {
-  shape?: string; // shape slug
-  metals?: Purity[]; // multi-select metal purities
-  style?: string; // sub-category slug
-  minPrice?: number;
-  maxPrice?: number;
-  inStock?: boolean;
-  sort?: "featured" | "price-asc" | "price-desc";
-  page?: number;
-};
+// Internal import for use within this file
+import type {
+  ProductCardData,
+  CollectionFilters,
+  FilterOption,
+  MarketingTileData,
+} from "@/lib/storefront/types";
 
 const GOLD_PURITIES: Purity[] = ["9K", "14K", "18K", "22K"];
-
-export type FilterOption = { label: string; value: string };
 
 function mediaUrl(media: unknown): string | null {
   if (!media || typeof media !== "object") return null;
@@ -54,10 +46,6 @@ function mediaBannerUrl(media: unknown): string | null {
     sizes?: { og?: { url?: string }; zoom?: { url?: string } };
   };
   return m.sizes?.og?.url ?? m.sizes?.zoom?.url ?? m.url ?? null;
-}
-
-export function formatInr(n: number): string {
-  return "₹" + n.toLocaleString("en-IN");
 }
 
 /** Full product for the PDP (images + relations populated). */
@@ -317,20 +305,6 @@ export type CollectionBannerData = {
   ctaLink: string | null;
 };
 
-export type MarketingTileData = {
-  id: string | number;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  imageAlt: string;
-  ctaText: string | null;
-  ctaLink: string | null;
-  /** value from select: cream | white | blush | sage | blue | navy | gold */
-  backgroundColor: string;
-  /** Tile is injected into the grid after this many products */
-  insertAfterNthProduct: number;
-  displayOrder: number;
-};
 
 /**
  * Returns the single active banner for a category, or null if none is
@@ -428,4 +402,53 @@ export async function getMarketingTiles(
       displayOrder: d.displayOrder ?? 0,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Homepage
+// ---------------------------------------------------------------------------
+
+export type ShapeOption = {
+  name: string;
+  slug: string;
+  iconUrl: string | null;
+};
+
+/** Returns all active shapes sorted by sortOrder. Used by ShapeGridSection. */
+export async function getShapes(): Promise<ShapeOption[]> {
+  const payload = await getPayload({ config });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await (payload as any).find({
+    collection: "shapes",
+    sort: "sortOrder",
+    limit: 50,
+    depth: 1,
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (res.docs as any[]).map((s) => ({
+    name: s.name,
+    slug: s.slug,
+    iconUrl: mediaUrl(s.icon),
+  }));
+}
+
+/**
+ * Returns the raw HomePage global document (sections array).
+ * Returns null when no sections have been saved yet (first run / empty CMS).
+ * Callers should fall back to DEFAULT_SECTIONS when null is returned.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getHomePage(): Promise<any | null> {
+  try {
+    const payload = await getPayload({ config });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const doc = await (payload as any).findGlobal({
+      slug: "home-page",
+      depth: 2, // populate category + product relationships
+    });
+    if (!doc?.sections?.length) return null;
+    return doc;
+  } catch {
+    return null;
+  }
 }

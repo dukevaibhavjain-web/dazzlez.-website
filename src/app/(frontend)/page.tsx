@@ -1,112 +1,152 @@
-import Link from "next/link";
-import { getCategories } from "@/lib/storefront/catalog";
+import type React from "react";
+import { getHomePage, getShapes } from "@/lib/storefront/catalog";
+import { HeroSliderSection } from "@/components/storefront/home/HeroSliderSection";
+import { CategoryGridSection } from "@/components/storefront/home/CategoryGridSection";
+import { ImageBannerSection } from "@/components/storefront/home/ImageBannerSection";
+import { ShapeGridSection } from "@/components/storefront/home/ShapeGridSection";
+import { PromiseStripSection } from "@/components/storefront/home/PromiseStripSection";
+import { FeaturedProductsSection } from "@/components/storefront/home/FeaturedProductsSection";
+import { CustomizationChatSection } from "@/components/storefront/home/CustomizationChatSection";
+import { NewsletterSection } from "@/components/storefront/home/NewsletterSection";
 
+// ISR: cache the page shell for 5 minutes (live prices are fetched client-side on PDP)
 export const revalidate = 300;
 
-const SHAPES = ["Round", "Oval", "Princess", "Pear", "Heart", "Cushion"];
+// ── Default sections shown when CMS has no data yet ─────────────────────────
+// Mirrors the previous hardcoded homepage so the page is never blank.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DEFAULT_SECTIONS: any[] = [
+  {
+    blockType: "hero-banner",
+    heading: "Celebrate your moments with jewellery as personal as they are.",
+    subheading:
+      "Lab-grown & natural diamonds. 100% transparent pricing. Certified, BIS-hallmarked, and crafted to order — or pick from ready stock.",
+    backgroundColor: "navy",
+    primaryCtaText: "Shop Rings",
+    primaryCtaLink: "/collections/rings",
+    secondaryCtaText: "Explore Collection",
+    secondaryCtaLink: "/collections/earrings",
+    splitMode: "split-chat",
+  },
+  {
+    blockType: "category-grid",
+    eyebrow: "Shop By",
+    title: "Category",
+    items: [
+      { category: { slug: "rings", name: "Rings" }, imageUrl: null },
+      { category: { slug: "earrings", name: "Earrings" }, imageUrl: null },
+      { category: { slug: "necklaces", name: "Necklaces" }, imageUrl: null },
+      { category: { slug: "bracelets", name: "Bracelets" }, imageUrl: null },
+    ],
+  },
+  {
+    blockType: "shape-grid",
+    eyebrow: "Shop By",
+    title: "Shape",
+    backgroundColor: "cream",
+    linkToCategory: "/collections/rings",
+  },
+  {
+    blockType: "promise-strip",
+    backgroundColor: "white",
+    items: [
+      {
+        icon: "✦",
+        title: "100% Transparent Pricing",
+        description:
+          "See exactly what you pay — metal, diamonds, making. Compare natural vs lab-grown side by side.",
+      },
+      {
+        icon: "✦",
+        title: "Certified & Hallmarked",
+        description:
+          "Every piece is BIS-hallmarked with certified solitaires. Full stone disclosure, always.",
+      },
+      {
+        icon: "✦",
+        title: "Made for You",
+        description:
+          "Most pieces are crafted to order. Talk to a designer on WhatsApp to personalise yours.",
+      },
+    ],
+  },
+  {
+    blockType: "customization-chat",
+    heading: "Find Your Perfect Piece",
+    subheading: "Tell us what you're looking for — our AI advisor will help you find it.",
+    placeholderText: "E.g. 'A rose gold ring for my anniversary under ₹1 lakh'",
+    ctaLabel: "Start Designing",
+    whatsappNumber: "+919829115205",
+  },
+];
+
+// ── Block renderer map ───────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BLOCK_MAP: Record<string, React.ComponentType<any>> = {
+  // hero-slider is the virtual grouped type — individual hero-banner blocks are
+  // merged into it before rendering (see groupHeroBanners below)
+  "hero-slider": HeroSliderSection,
+  "category-grid": CategoryGridSection,
+  "image-banner": ImageBannerSection,
+  "shape-grid": ShapeGridSection,
+  "promise-strip": PromiseStripSection,
+  "featured-products": FeaturedProductsSection,
+  "customization-chat": CustomizationChatSection,
+};
+
+/**
+ * Collapse runs of consecutive `hero-banner` blocks into a single
+ * `{ blockType: "hero-slider", slides: [...] }` entry so they render
+ * as a carousel instead of stacking.  A lone hero-banner becomes a
+ * slider with one slide (no arrows/dots rendered).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function groupHeroBanners(sections: any[]): any[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const out: any[] = [];
+  let i = 0;
+  while (i < sections.length) {
+    if (sections[i].blockType === "hero-banner") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const slides: any[] = [];
+      while (i < sections.length && sections[i].blockType === "hero-banner") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { blockType: _bt, id: _id, ...slideProps } = sections[i] as any;
+        slides.push(slideProps);
+        i++;
+      }
+      out.push({ blockType: "hero-slider", slides });
+    } else {
+      out.push(sections[i]);
+      i++;
+    }
+  }
+  return out;
+}
 
 export default async function HomePage() {
-  const categories = await getCategories();
-  const shopCategories = categories.filter((c) =>
-    ["rings", "earrings", "necklaces", "bracelets"].includes(c.slug),
-  );
+  const [homePage, shapes] = await Promise.all([
+    getHomePage(),
+    getShapes(),
+  ]);
+
+  const rawSections: any[] = homePage?.sections ?? DEFAULT_SECTIONS; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const sections = groupHeroBanners(rawSections);
 
   return (
     <>
-      {/* Hero */}
-      <section className="bg-navy text-cream">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <p className="eyebrow mb-3">Fine Diamond Jewellery</p>
-            <h1 className="font-display text-5xl md:text-6xl leading-tight">
-              Celebrate your moments with jewellery as personal as they are.
-            </h1>
-            <p className="mt-5 text-cream/70 max-w-md leading-relaxed">
-              Lab-grown &amp; natural diamonds. 100% transparent pricing. Certified,
-              BIS-hallmarked, and crafted to order — or pick from ready stock.
-            </p>
-            <div className="mt-8 flex gap-4">
-              <Link
-                href="/collections/rings"
-                className="bg-gold text-navy font-medium px-7 py-3 rounded-full hover:bg-gold-300 transition-colors"
-              >
-                Shop Rings
-              </Link>
-              <Link
-                href="/collections/earrings"
-                className="border border-cream/30 text-cream px-7 py-3 rounded-full hover:border-gold hover:text-gold transition-colors"
-              >
-                Explore Collection
-              </Link>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="aspect-square rounded-full bg-gradient-to-br from-gold/30 to-navy-500 flex items-center justify-center">
-              <span className="font-display text-7xl text-gold/80">✦</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {sections.map((section, i) => {
+        const Component = BLOCK_MAP[section.blockType];
+        if (!Component) return null;
 
-      {/* Shop by category */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-16">
-        <div className="text-center mb-10">
-          <p className="eyebrow">Shop By</p>
-          <h2 className="font-display text-4xl text-navy mt-1">Category</h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {shopCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/collections/${cat.slug}`}
-              className="group relative aspect-[4/5] rounded-lg overflow-hidden bg-navy flex items-end p-5"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-              <span className="relative font-display text-2xl text-cream group-hover:text-gold transition-colors">
-                {cat.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+        // ShapeGridSection needs the shapes list fetched server-side
+        const extraProps = section.blockType === "shape-grid" ? { shapes } : {};
 
-      {/* Shop by shape */}
-      <section className="bg-cream-200 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <p className="eyebrow">Shop By</p>
-            <h2 className="font-display text-4xl text-navy mt-1">Shape</h2>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {SHAPES.map((shape) => (
-              <Link
-                key={shape}
-                href={`/collections/rings?shape=${shape.toLowerCase()}`}
-                className="px-6 py-2.5 bg-white rounded-full border border-cream-200 text-sm hover:border-gold hover:text-gold transition-colors"
-              >
-                {shape}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        return <Component key={i} {...section} {...extraProps} />;
+      })}
 
-      {/* Transparency promise */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-16">
-        <div className="grid md:grid-cols-3 gap-8 text-center">
-          {[
-            { t: "100% Transparent Pricing", d: "See exactly what you pay — metal, diamonds, making. Compare natural vs lab-grown side by side." },
-            { t: "Certified & Hallmarked", d: "Every piece is BIS-hallmarked with certified solitaires. Full stone disclosure, always." },
-            { t: "Made for You", d: "Most pieces are crafted to order. Talk to a designer on WhatsApp to personalise yours." },
-          ].map((item) => (
-            <div key={item.t}>
-              <div className="text-gold text-3xl mb-3 font-display">✦</div>
-              <h3 className="font-display text-xl text-navy mb-2">{item.t}</h3>
-              <p className="text-muted text-sm leading-relaxed">{item.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Newsletter — always shown on homepage, above the global footer */}
+      <NewsletterSection />
     </>
   );
 }

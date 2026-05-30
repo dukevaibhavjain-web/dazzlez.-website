@@ -178,8 +178,48 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const shapeName = (d: any) =>
     typeof d?.shape === "object" ? d.shape?.name : null;
 
+  // ── Product JSON-LD schema ──────────────────────────────────────────────
+  const heroImageUrl = imgUrl(product.heroImage, "zoom");
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://thedazzlez.com";
+  const productUrl = `${BASE_URL}/product/${product.slug}`;
+
+  const productSchema: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type":    "Product",
+    name:        product.displayName,
+    description: product.description ?? `${product.displayName} — certified diamond jewellery by Dazzlez.`,
+    brand: { "@type": "Brand", name: "The Dazzlez" },
+    url:   productUrl,
+    sku:   product.code,
+    ...(heroImageUrl ? { image: [heroImageUrl] } : {}),
+    offers: {
+      "@type":          "Offer",
+      priceCurrency:    "INR",
+      price:            product.fromPriceInr ?? 0,
+      availability:     "https://schema.org/InStock",
+      url:              productUrl,
+      seller:           { "@type": "Organization", name: "The Dazzlez" },
+    },
+    ...(avgRating > 0 && totalReviews > 0
+      ? {
+          aggregateRating: {
+            "@type":       "AggregateRating",
+            ratingValue:   avgRating,
+            reviewCount:   totalReviews,
+            bestRating:    5,
+            worstRating:   1,
+          },
+        }
+      : {}),
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+
       {/* Sticky bar — slides in from top once user scrolls past the buy box */}
       <StickyPDPBar
         displayName={product.displayName}

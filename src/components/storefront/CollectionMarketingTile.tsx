@@ -8,7 +8,7 @@
  * The tile spans the full grid width via col-span-full on the parent grid.
  */
 import Link from "next/link";
-import type { MarketingTileData } from "@/lib/storefront/catalog";
+import type { MarketingTileData } from "@/lib/storefront/types";
 
 /** Maps the CMS backgroundColor select value → Tailwind classes */
 const BG: Record<string, string> = {

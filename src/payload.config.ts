@@ -1,4 +1,5 @@
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import path from "path";
 import { buildConfig } from "payload";
@@ -17,13 +18,16 @@ import { Reviews } from "./collections/Reviews";
 import { FAQs } from "./collections/FAQs";
 import { TrustBadges } from "./collections/TrustBadges";
 import { TryAtHomeLeads } from "./collections/TryAtHomeLeads";
+import { Orders } from "./collections/Orders";
 import { CollectionBanners } from "./collections/CollectionBanners";
 import { CollectionMarketingTiles } from "./collections/CollectionMarketingTiles";
 import { RateDiamond } from "./collections/RateDiamond";
 import { RateGold } from "./collections/RateGold";
 import { Shapes } from "./collections/Shapes";
 import { SubCategories } from "./collections/SubCategories";
+import { ChatbotConfig } from "./globals/ChatbotConfig";
 import { FeatureFlags } from "./globals/FeatureFlags";
+import { HomePage } from "./globals/HomePage";
 import { SiteSettings } from "./globals/SiteSettings";
 import { TryAtHomeSettings } from "./globals/TryAtHomeSettings";
 import { consoleEmailAdapter } from "./lib/email-console";
@@ -33,6 +37,15 @@ const dirname = path.dirname(filename);
 
 export default buildConfig({
   serverURL: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  plugins: [
+    vercelBlobStorage({
+      token: process.env.BLOB_READ_WRITE_TOKEN || "",
+      enabled: !!process.env.BLOB_READ_WRITE_TOKEN,
+      collections: {
+        media: true,
+      },
+    }),
+  ],
   admin: {
     user: "users",
     importMap: {
@@ -89,8 +102,9 @@ export default buildConfig({
     // CRM
     Customers,
     TryAtHomeLeads,
+    Orders,
   ],
-  globals: [SiteSettings, FeatureFlags, TryAtHomeSettings],
+  globals: [SiteSettings, FeatureFlags, TryAtHomeSettings, HomePage, ChatbotConfig],
   editor: lexicalEditor(),
   email: consoleEmailAdapter,
   secret: process.env.PAYLOAD_SECRET || "",
@@ -99,7 +113,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URI || "",
+      connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || "",
     },
   }),
   sharp,

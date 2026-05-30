@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { ProductCardData } from "@/lib/storefront/catalog";
-import { formatInr } from "@/lib/storefront/catalog";
+import type { ProductCardData } from "@/lib/storefront/types";
+import { formatInr } from "@/lib/storefront/types";
 
 export function ProductCard({ product }: { product: ProductCardData }) {
   // Carry the metal that produced the shown price into the PDP so its headline

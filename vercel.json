@@ -1,0 +1,8 @@
+{
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "functions": {
+    "src/app/api/**": { "maxDuration": 60 },
+    "src/app/(payload)/**": { "maxDuration": 60 }
+  }
+}

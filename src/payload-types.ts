@@ -82,10 +82,13 @@ export interface Config {
     'making-rules': MakingRule;
     'fx-rates': FxRate;
     reviews: Review;
+    'collection-banners': CollectionBanner;
+    'collection-marketing-tiles': CollectionMarketingTile;
     faqs: Faq;
     'trust-badges': TrustBadge;
     customers: Customer;
     'try-at-home-leads': TryAtHomeLead;
+    orders: Order;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -107,10 +110,13 @@ export interface Config {
     'making-rules': MakingRulesSelect<false> | MakingRulesSelect<true>;
     'fx-rates': FxRatesSelect<false> | FxRatesSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
+    'collection-banners': CollectionBannersSelect<false> | CollectionBannersSelect<true>;
+    'collection-marketing-tiles': CollectionMarketingTilesSelect<false> | CollectionMarketingTilesSelect<true>;
     faqs: FaqsSelect<false> | FaqsSelect<true>;
     'trust-badges': TrustBadgesSelect<false> | TrustBadgesSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
     'try-at-home-leads': TryAtHomeLeadsSelect<false> | TryAtHomeLeadsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -124,11 +130,15 @@ export interface Config {
     'site-settings': SiteSetting;
     'feature-flags': FeatureFlag;
     'try-at-home-settings': TryAtHomeSetting;
+    'home-page': HomePage;
+    'chatbot-config': ChatbotConfig;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'feature-flags': FeatureFlagsSelect<false> | FeatureFlagsSelect<true>;
     'try-at-home-settings': TryAtHomeSettingsSelect<false> | TryAtHomeSettingsSelect<true>;
+    'home-page': HomePageSelect<false> | HomePageSelect<true>;
+    'chatbot-config': ChatbotConfigSelect<false> | ChatbotConfigSelect<true>;
   };
   locale: null;
   widgets: {
@@ -583,6 +593,105 @@ export interface Review {
   createdAt: string;
 }
 /**
+ * Hero banner shown at the top of each collection page. Drag & drop an image (or paste a URL) directly into the Image fields below.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collection-banners".
+ */
+export interface CollectionBanner {
+  id: number;
+  /**
+   * Which collection page should this banner appear on?
+   */
+  category: number | Category;
+  /**
+   * Heading shown below the banner image. Appears as the page H1.
+   */
+  title: string;
+  /**
+   * Smaller tagline shown below the title.
+   */
+  subtitle?: string | null;
+  /**
+   * Optional short paragraph below the subtitle.
+   */
+  description?: string | null;
+  /**
+   * Desktop banner (landscape). Recommended: 1400 × 500 px. Drag & drop, click to browse, or paste a URL.
+   */
+  imageUrl: string;
+  /**
+   * Optional portrait/square crop shown on screens ≤ 640 px wide. Recommended: 640 × 800 px. Falls back to the desktop image if left empty. Drag & drop, click to browse, or paste a URL.
+   */
+  mobileImageUrl?: string | null;
+  overlayOpacity?: ('0' | '15' | '30' | '50' | '65') | null;
+  /**
+   * Button label — e.g. 'Shop Now'
+   */
+  ctaText?: string | null;
+  /**
+   * Button destination — e.g. '/collections/rings'
+   */
+  ctaLink?: string | null;
+  /**
+   * Uncheck to hide this banner without deleting it.
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Full-width promotional tiles inserted into the product grid at configurable positions. Drag & drop an image (or paste a URL) directly into the Image field below.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collection-marketing-tiles".
+ */
+export interface CollectionMarketingTile {
+  id: number;
+  /**
+   * Which collection page should this tile appear on?
+   */
+  category: number | Category;
+  /**
+   * Tile heading.
+   */
+  title: string;
+  /**
+   * Short body text — keep under 120 characters for best display.
+   */
+  description?: string | null;
+  /**
+   * Tile image. Recommended: 600 × 400 px. Drag & drop, browse, or paste a URL.
+   */
+  imageUrl?: string | null;
+  /**
+   * Button label — e.g. 'Try at Home'
+   */
+  ctaText?: string | null;
+  /**
+   * Button URL
+   */
+  ctaLink?: string | null;
+  /**
+   * Tile background colour.
+   */
+  backgroundColor?: ('cream' | 'white' | 'blush' | 'sage' | 'blue' | 'navy' | 'gold') | null;
+  /**
+   * Insert this tile after the Nth product. E.g. 6 = appears between product 6 and 7.
+   */
+  insertAfterNthProduct?: number | null;
+  /**
+   * If multiple tiles share the same position, lower number = shown first.
+   */
+  displayOrder?: number | null;
+  /**
+   * Uncheck to hide this tile without deleting it.
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * FAQ accordion shown on all product pages. Drag rows or set 'order' to control sequence.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -689,8 +798,82 @@ export interface TryAtHomeLead {
   productCode?: string | null;
   productName?: string | null;
   status?: ('new' | 'contacted' | 'scheduled' | 'converted' | 'rejected') | null;
+  leadSource?: ('try-at-home' | 'design-advisor' | 'ai-chat' | 'other') | null;
+  /**
+   * Customer-uploaded reference images from the Design Advisor
+   */
+  referenceImages?:
+    | {
+        /**
+         * Click to open the image in a new tab
+         */
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Internal notes — not visible to the customer
+   */
+  adminNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Customer orders placed via checkout. Update fulfillment status as items move through production and dispatch.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  /**
+   * Auto-generated. e.g. DZ-2025-0001
+   */
+  orderId: string;
+  /**
+   * Cashfree's order reference. Use for refunds.
+   */
+  cashfreeOrderId?: string | null;
+  cashfreePaymentId?: string | null;
+  paymentStatus: 'pending' | 'captured' | 'failed' | 'refunded';
+  fulfillmentStatus: 'new' | 'confirmed' | 'in_production' | 'ready' | 'dispatched' | 'delivered' | 'cancelled';
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  shippingAddress: {
+    line1: string;
+    line2?: string | null;
+    city: string;
+    state: string;
+    pincode: string;
+  };
+  /**
+   * Products exactly as configured at the time of purchase.
+   */
+  items: {
+    productCode: string;
+    displayName: string;
+    qty?: number | null;
+    metal?: string | null;
+    goldColor?: string | null;
+    diamondTier?: string | null;
+    ringSize?: string | null;
+    caratWeight?: string | null;
+    unitPriceInr?: number | null;
+    engraving?: string | null;
+    id?: string | null;
+  }[];
+  subtotalInr?: number | null;
+  gstInr?: number | null;
+  totalInr: number;
+  orderNotes?: string | null;
+  gstInvoiceRequested?: boolean | null;
+  /**
+   * Enter after dispatching to share with customer.
+   */
+  trackingInfo?: string | null;
+  /**
+   * Not visible to the customer.
    */
   adminNotes?: string | null;
   updatedAt: string;
@@ -777,6 +960,14 @@ export interface PayloadLockedDocument {
         value: number | Review;
       } | null)
     | ({
+        relationTo: 'collection-banners';
+        value: number | CollectionBanner;
+      } | null)
+    | ({
+        relationTo: 'collection-marketing-tiles';
+        value: number | CollectionMarketingTile;
+      } | null)
+    | ({
         relationTo: 'faqs';
         value: number | Faq;
       } | null)
@@ -791,6 +982,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'try-at-home-leads';
         value: number | TryAtHomeLead;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
       } | null);
   globalSlug?: string | null;
   user:
@@ -1136,6 +1331,42 @@ export interface ReviewsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collection-banners_select".
+ */
+export interface CollectionBannersSelect<T extends boolean = true> {
+  category?: T;
+  title?: T;
+  subtitle?: T;
+  description?: T;
+  imageUrl?: T;
+  mobileImageUrl?: T;
+  overlayOpacity?: T;
+  ctaText?: T;
+  ctaLink?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collection-marketing-tiles_select".
+ */
+export interface CollectionMarketingTilesSelect<T extends boolean = true> {
+  category?: T;
+  title?: T;
+  description?: T;
+  imageUrl?: T;
+  ctaText?: T;
+  ctaLink?: T;
+  backgroundColor?: T;
+  insertAfterNthProduct?: T;
+  displayOrder?: T;
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "faqs_select".
  */
 export interface FaqsSelect<T extends boolean = true> {
@@ -1202,6 +1433,60 @@ export interface TryAtHomeLeadsSelect<T extends boolean = true> {
   productCode?: T;
   productName?: T;
   status?: T;
+  leadSource?: T;
+  referenceImages?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  adminNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  orderId?: T;
+  cashfreeOrderId?: T;
+  cashfreePaymentId?: T;
+  paymentStatus?: T;
+  fulfillmentStatus?: T;
+  customerName?: T;
+  customerPhone?: T;
+  customerEmail?: T;
+  shippingAddress?:
+    | T
+    | {
+        line1?: T;
+        line2?: T;
+        city?: T;
+        state?: T;
+        pincode?: T;
+      };
+  items?:
+    | T
+    | {
+        productCode?: T;
+        displayName?: T;
+        qty?: T;
+        metal?: T;
+        goldColor?: T;
+        diamondTier?: T;
+        ringSize?: T;
+        caratWeight?: T;
+        unitPriceInr?: T;
+        engraving?: T;
+        id?: T;
+      };
+  subtotalInr?: T;
+  gstInr?: T;
+  totalInr?: T;
+  orderNotes?: T;
+  gstInvoiceRequested?: T;
+  trackingInfo?: T;
   adminNotes?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1254,6 +1539,38 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface SiteSetting {
   id: number;
+  /**
+   * Found in Meta Events Manager → your pixel → Settings. A 15–16 digit number.
+   */
+  metaPixelId?: string | null;
+  /**
+   * Found in GA4 Admin → Data Streams → your stream → Measurement ID. Starts with 'G-'.
+   */
+  ga4MeasurementId?: string | null;
+  /**
+   * Found in TikTok Ads Manager → Assets → Events → your pixel. Alphanumeric string.
+   */
+  tiktokPixelId?: string | null;
+  /**
+   * International format. Used in the Design Advisor and Try-at-Home WA links.
+   */
+  whatsappNumber?: string | null;
+  /**
+   * If you use GTM, enter the container ID. GTM can manage all other pixels, so leave the above IDs blank if GTM handles them.
+   */
+  googleTagManagerId?: string | null;
+  /**
+   * Switch to Production when you are ready to accept real payments.
+   */
+  cashfreeEnvironment?: ('sandbox' | 'production') | null;
+  /**
+   * Percentage of order total charged at checkout. 100 = full payment upfront (default). Lower values (e.g. 50) create a deposit flow.
+   */
+  checkoutDepositPct?: number | null;
+  /**
+   * Currency shown at checkout. Cashfree supports INR.
+   */
+  checkoutCurrency?: 'INR' | null;
   /**
    * Shown on PDP and quote PDFs for made-to-order products.
    */
@@ -1338,10 +1655,348 @@ export interface TryAtHomeSetting {
   createdAt?: string | null;
 }
 /**
+ * Control every section on the homepage. Use '+ Add Block' to add a new section, and drag the handles to reorder them.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page".
+ */
+export interface HomePage {
+  id: number;
+  /**
+   * Each row is one section on the homepage. Drag to reorder. Leave empty to show the default layout.
+   */
+  sections?:
+    | (
+        | {
+            /**
+             * Main headline text.
+             */
+            heading: string;
+            /**
+             * Optional paragraph below the headline.
+             */
+            subheading?: string | null;
+            /**
+             * Desktop hero image. Recommended: 1400 × 600 px. Drag & drop, browse, or paste a URL.
+             */
+            imageUrl?: string | null;
+            /**
+             * Optional portrait crop for phones (≤ 640 px). Recommended: 640 × 800 px. Falls back to desktop image.
+             */
+            mobileImageUrl?: string | null;
+            /**
+             * Background colour shown when no image is set, or as overlay fallback.
+             */
+            backgroundColor?: ('navy' | 'cream' | 'white') | null;
+            /**
+             * Primary button label — e.g. 'Shop Rings'
+             */
+            primaryCtaText?: string | null;
+            /**
+             * Primary button URL — e.g. '/collections/rings'
+             */
+            primaryCtaLink?: string | null;
+            /**
+             * Secondary button label (optional)
+             */
+            secondaryCtaText?: string | null;
+            /**
+             * Secondary button URL (optional)
+             */
+            secondaryCtaLink?: string | null;
+            /**
+             * Split mode places the AI chat box on the right half of the hero. Works best with a background image.
+             */
+            splitMode?: ('full' | 'split-chat') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'hero-banner';
+          }
+        | {
+            /**
+             * Small uppercase label above the title.
+             */
+            eyebrow?: string | null;
+            title: string;
+            /**
+             * Add one row per category card. Drag to reorder.
+             */
+            items?:
+              | {
+                  category: number | Category;
+                  /**
+                   * Card background image. Recommended: 500 × 625 px (portrait). Falls back to navy gradient.
+                   */
+                  imageUrl?: string | null;
+                  /**
+                   * Override the category name shown on the card (optional).
+                   */
+                  labelOverride?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'category-grid';
+          }
+        | {
+            /**
+             * Desktop banner image. Recommended: 1400 × 500 px. Drag & drop, browse, or paste a URL.
+             */
+            imageUrl: string;
+            /**
+             * Optional portrait crop for phones (≤ 640 px). Recommended: 640 × 800 px.
+             */
+            mobileImageUrl?: string | null;
+            /**
+             * Alt text for screen readers and SEO.
+             */
+            altText?: string | null;
+            /**
+             * Makes the entire banner clickable — e.g. '/collections/earrings'.
+             */
+            link?: string | null;
+            /**
+             * Optional heading overlaid on the image.
+             */
+            overlayText?: string | null;
+            /**
+             * CTA button label shown on the overlay.
+             */
+            ctaText?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'image-banner';
+          }
+        | {
+            /**
+             * Small uppercase label above the title.
+             */
+            eyebrow?: string | null;
+            title?: string | null;
+            backgroundColor?: ('cream' | 'white' | 'navy') | null;
+            /**
+             * Each shape chip links to this category URL with ?shape=<slug> appended — e.g. '/collections/rings'.
+             */
+            linkToCategory?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'shape-grid';
+          }
+        | {
+            /**
+             * Optional small uppercase label above the title.
+             */
+            eyebrow?: string | null;
+            /**
+             * Optional section heading.
+             */
+            title?: string | null;
+            backgroundColor?: ('white' | 'cream' | 'navy') | null;
+            /**
+             * Each item is one column in the strip.
+             */
+            items?:
+              | {
+                  /**
+                   * Paste an emoji (e.g. ✦ 💎 ✓ ★). Windows: Win+.  •  Mac: Ctrl+Cmd+Space to open the emoji picker.
+                   */
+                  icon?: string | null;
+                  /**
+                   * Optional: upload a small icon image (PNG/SVG, square ~64 px). Shown instead of the emoji above if both are set.
+                   */
+                  iconUrl?: string | null;
+                  title: string;
+                  description?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'promise-strip';
+          }
+        | {
+            /**
+             * Small uppercase label above the title.
+             */
+            eyebrow?: string | null;
+            title: string;
+            /**
+             * Select up to 8 products to feature. Drag to reorder.
+             */
+            items?:
+              | {
+                  /**
+                   * Step 1 — Select a category to filter the products below.
+                   */
+                  category?: (number | null) | Category;
+                  /**
+                   * Step 2 — Pick a product. Selecting a category above narrows this list automatically.
+                   */
+                  product: number | Product;
+                  /**
+                   * Step 3 — Optional: pin a specific metal so the card links directly to that variant on the PDP.
+                   */
+                  metal?: ('' | '9K' | '14K' | '18K' | '22K' | 'Silver925' | 'Platinum') | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'featured-products';
+          }
+        | {
+            /**
+             * Section heading shown above the chat initiator.
+             */
+            heading?: string | null;
+            /**
+             * Short paragraph below the heading.
+             */
+            subheading?: string | null;
+            /**
+             * Placeholder text inside the chat input box.
+             */
+            placeholderText?: string | null;
+            /**
+             * Label on the button that opens the chat.
+             */
+            ctaLabel?: string | null;
+            /**
+             * WhatsApp number for human escalation (include country code, e.g. +919829115205).
+             */
+            whatsappNumber?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'customization-chat';
+          }
+      )[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Build the Design Advisor questionnaire by adding, removing, and reordering steps. Each step can route to any other by Step Key. Changes go live within ~1 minute.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chatbot-config".
+ */
+export interface ChatbotConfig {
+  id: number;
+  /**
+   * The Step Key of the first step shown to the customer. Default: 'occasion'.
+   */
+  entryStepKey?: string | null;
+  /**
+   * Add blocks to build your questionnaire. Drag to reorder. Use 'Choice Step' for button grids, 'Describe Step' for free-text input, 'Upload Step' for image uploads. Use '__results__' or '__contact__' in 'Go to Step' fields to terminate the flow.
+   */
+  steps?:
+    | (
+        | {
+            /**
+             * Unique identifier used in 'Go to Step' fields (e.g. 'occasion', 'budget'). No spaces.
+             */
+            stepKey: string;
+            questionText: string;
+            subtitle?: string | null;
+            /**
+             * Each row is a tappable button. 'Go to Step' must match another step's key, or use __results__ (show product grid) or __contact__ (show lead form only).
+             */
+            options?:
+              | {
+                  label: string;
+                  emoji?: string | null;
+                  /**
+                   * e.g. 'budget' or '__results__'
+                   */
+                  goToStepKey?: string | null;
+                  categorySlug?: ('rings' | 'necklaces' | 'earrings' | 'bracelets' | '') | null;
+                  behavior?: ('normal' | 'prefer-chat') | null;
+                  /**
+                   * ₹ min (0 = none)
+                   */
+                  minPrice?: number | null;
+                  /**
+                   * ₹ max (0 = none)
+                   */
+                  maxPrice?: number | null;
+                  /**
+                   * Pre-filled WhatsApp message style
+                   */
+                  waStyle?: ('standard' | 'reference' | 'expert' | 'describe') | null;
+                  /**
+                   * Custom event name, e.g. "WeddingRingChosen"
+                   */
+                  pixelEvent?: string | null;
+                  /**
+                   * e.g. {"occasion":"Wedding"}
+                   */
+                  pixelParams?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'choiceStep';
+          }
+        | {
+            /**
+             * Unique identifier, e.g. 'describe'
+             */
+            stepKey: string;
+            questionText: string;
+            subtitle?: string | null;
+            placeholder?: string | null;
+            /**
+             * Small chips the customer can tap to auto-append words to their description. Include emoji in the label if you want.
+             */
+            hints?:
+              | {
+                  label: string;
+                  id?: string | null;
+                }[]
+              | null;
+            /**
+             * Step key to navigate to after the customer submits. Usually '__results__'.
+             */
+            goToStepKey?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'describeStep';
+          }
+        | {
+            /**
+             * Unique identifier, e.g. 'upload'
+             */
+            stepKey: string;
+            questionText: string;
+            subtitle?: string | null;
+            /**
+             * Step key to navigate to after the customer continues. Usually '__results__'.
+             */
+            goToStepKey?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'uploadStep';
+          }
+      )[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
+  metaPixelId?: T;
+  ga4MeasurementId?: T;
+  tiktokPixelId?: T;
+  whatsappNumber?: T;
+  googleTagManagerId?: T;
+  cashfreeEnvironment?: T;
+  checkoutDepositPct?: T;
+  checkoutCurrency?: T;
   madeToOrderDisclaimer?: T;
   readyStockBadgeText?: T;
   readyStockPriceNote?: T;
@@ -1394,6 +2049,183 @@ export interface TryAtHomeSettingsSelect<T extends boolean = true> {
   buttonText?: T;
   image?: T;
   disclaimer?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page_select".
+ */
+export interface HomePageSelect<T extends boolean = true> {
+  sections?:
+    | T
+    | {
+        'hero-banner'?:
+          | T
+          | {
+              heading?: T;
+              subheading?: T;
+              imageUrl?: T;
+              mobileImageUrl?: T;
+              backgroundColor?: T;
+              primaryCtaText?: T;
+              primaryCtaLink?: T;
+              secondaryCtaText?: T;
+              secondaryCtaLink?: T;
+              splitMode?: T;
+              id?: T;
+              blockName?: T;
+            };
+        'category-grid'?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              items?:
+                | T
+                | {
+                    category?: T;
+                    imageUrl?: T;
+                    labelOverride?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        'image-banner'?:
+          | T
+          | {
+              imageUrl?: T;
+              mobileImageUrl?: T;
+              altText?: T;
+              link?: T;
+              overlayText?: T;
+              ctaText?: T;
+              id?: T;
+              blockName?: T;
+            };
+        'shape-grid'?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              backgroundColor?: T;
+              linkToCategory?: T;
+              id?: T;
+              blockName?: T;
+            };
+        'promise-strip'?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              backgroundColor?: T;
+              items?:
+                | T
+                | {
+                    icon?: T;
+                    iconUrl?: T;
+                    title?: T;
+                    description?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        'featured-products'?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              items?:
+                | T
+                | {
+                    category?: T;
+                    product?: T;
+                    metal?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        'customization-chat'?:
+          | T
+          | {
+              heading?: T;
+              subheading?: T;
+              placeholderText?: T;
+              ctaLabel?: T;
+              whatsappNumber?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chatbot-config_select".
+ */
+export interface ChatbotConfigSelect<T extends boolean = true> {
+  entryStepKey?: T;
+  steps?:
+    | T
+    | {
+        choiceStep?:
+          | T
+          | {
+              stepKey?: T;
+              questionText?: T;
+              subtitle?: T;
+              options?:
+                | T
+                | {
+                    label?: T;
+                    emoji?: T;
+                    goToStepKey?: T;
+                    categorySlug?: T;
+                    behavior?: T;
+                    minPrice?: T;
+                    maxPrice?: T;
+                    waStyle?: T;
+                    pixelEvent?: T;
+                    pixelParams?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        describeStep?:
+          | T
+          | {
+              stepKey?: T;
+              questionText?: T;
+              subtitle?: T;
+              placeholder?: T;
+              hints?:
+                | T
+                | {
+                    label?: T;
+                    id?: T;
+                  };
+              goToStepKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+        uploadStep?:
+          | T
+          | {
+              stepKey?: T;
+              questionText?: T;
+              subtitle?: T;
+              goToStepKey?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

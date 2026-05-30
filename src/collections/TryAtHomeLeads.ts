@@ -92,6 +92,39 @@ export const TryAtHomeLeads: CollectionConfig = {
         position: "sidebar",
       },
     },
+    // ── Chatbot / Design Advisor fields ──────────────────────────────
+    {
+      name: "leadSource",
+      type: "select",
+      label: "Lead Source",
+      defaultValue: "try-at-home",
+      options: [
+        { label: "Try at Home form",   value: "try-at-home" },
+        { label: "AI Design Advisor",  value: "design-advisor" },
+        { label: "AI Chat Escalation", value: "ai-chat" },
+        { label: "Other",              value: "other" },
+      ],
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "referenceImages",
+      type: "array",
+      label: "Reference Images",
+      admin: {
+        description: "Customer-uploaded reference images from the Design Advisor",
+      },
+      fields: [
+        {
+          name: "url",
+          type: "text",
+          required: true,
+          label: "Image URL",
+          admin: {
+            description: "Click to open the image in a new tab",
+          },
+        },
+      ],
+    },
     {
       name: "adminNotes",
       type: "textarea",

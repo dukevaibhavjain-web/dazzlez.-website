@@ -8,15 +8,12 @@ import {
   getProductsForCategory,
   getCollectionBanner,
   getMarketingTiles,
-  type CollectionFilters,
-  type MarketingTileData,
 } from "@/lib/storefront/catalog";
-import { ProductCard } from "@/components/storefront/ProductCard";
+import type { CollectionFilters, MarketingTileData } from "@/lib/storefront/types";
 import { FilterBar } from "@/components/storefront/FilterBar";
 import { ActiveFilterChips } from "@/components/storefront/ActiveFilterChips";
-import { Pagination } from "@/components/storefront/Pagination";
 import { CollectionBanner } from "@/components/storefront/CollectionBanner";
-import { CollectionMarketingTile } from "@/components/storefront/CollectionMarketingTile";
+import { InfiniteProductGrid } from "@/components/storefront/InfiniteProductGrid";
 
 const PAGE_SIZE = 48;
 
@@ -45,7 +42,6 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const cat = await getCategoryBySlug(category);
   if (!cat) notFound();
 
-  const page = Math.max(1, Number(str(sp.page) ?? 1) || 1);
   const metalCsv = str(sp.metal);
   const filters: CollectionFilters = {
     shape: str(sp.shape),
@@ -57,7 +53,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     maxPrice: str(sp.max) ? Number(str(sp.max)) : undefined,
     inStock: str(sp.inStock) === "1",
     sort: (str(sp.sort) as CollectionFilters["sort"]) ?? "featured",
-    page,
+    page: 1, // SSR always renders page 1; client handles subsequent pages
   };
 
   const [{ products, total }, options, banner, tiles] = await Promise.all([
@@ -67,7 +63,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     getMarketingTiles(cat.id),
   ]);
 
-  // Build interleaved grid: products with marketing tiles spliced in
+  // Build first-page grid items: products interleaved with marketing tiles
   const tilesByPos = new Map<number, MarketingTileData[]>();
   for (const tile of tiles) {
     const pos = tile.insertAfterNthProduct;
@@ -79,18 +75,18 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     | { type: "product"; data: (typeof products)[number] }
     | { type: "tile"; data: MarketingTileData };
 
-  const gridItems: GridItem[] = [];
+  const initialItems: GridItem[] = [];
   products.forEach((p, idx) => {
-    gridItems.push({ type: "product", data: p });
-    // tiles are keyed to absolute position across all pages
-    const absIdx = (page - 1) * PAGE_SIZE + idx + 1;
+    initialItems.push({ type: "product", data: p });
+    const absIdx = idx + 1; // first page always starts at 1
     const afterThis = tilesByPos.get(absIdx);
     if (afterThis) {
-      for (const tile of afterThis) gridItems.push({ type: "tile", data: tile });
+      for (const tile of afterThis) initialItems.push({ type: "tile", data: tile });
     }
   });
 
-  const basePath = `/collections/${category}`;
+  // Filters without `page` — InfiniteProductGrid manages page internally
+  const { page: _page, ...filtersForClient } = filters;
 
   return (
     <>
@@ -147,27 +143,15 @@ export default async function CollectionPage({ params, searchParams }: Props) {
                 No products match these filters. Try clearing some.
               </p>
             ) : (
-              <>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {gridItems.map((item, idx) =>
-                    item.type === "product" ? (
-                      <ProductCard key={item.data.id} product={item.data} />
-                    ) : (
-                      <div key={`tile-${item.data.id}-${idx}`} className="col-span-2 lg:col-span-3">
-                        <CollectionMarketingTile tile={item.data} />
-                      </div>
-                    ),
-                  )}
-                </div>
-
-                <Pagination
-                  page={page}
-                  total={total}
-                  pageSize={PAGE_SIZE}
-                  basePath={basePath}
-                  searchParams={sp}
-                />
-              </>
+              <InfiniteProductGrid
+                key={JSON.stringify(filtersForClient)}
+                initialItems={initialItems}
+                initialTotal={total}
+                category={category}
+                filters={filtersForClient}
+                tiles={tiles}
+                pageSize={PAGE_SIZE}
+              />
             )}
           </div>
         </div>

@@ -308,7 +308,7 @@ export function FilterBar({ shapes, styles, metals }: Props) {
       )}
 
       {/* ── Desktop sidebar ────────────────────────────────────────────────── */}
-      <aside className="hidden md:block md:w-60 md:shrink-0">
+      <aside className="hidden md:block md:w-60 md:shrink-0 sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-display text-xl text-navy">Filters</h3>
           {hasFilters && (
