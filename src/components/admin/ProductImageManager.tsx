@@ -262,14 +262,22 @@ const ProductImageManager = () => {
         try {
           const fd = new FormData();
           fd.append("file", file);
-          fd.append("_payload", JSON.stringify({ alt: file.name.replace(/\.[^.]+$/, "") }));
-          const res = await fetch("/api/media", { method: "POST", body: fd });
-          const data = await res.json() as { doc?: { id: string | number; url?: string; filename?: string; sizes?: unknown } };
-          if (data?.doc?.id) {
-            newEntries.push({ image: data.doc as GalleryEntry["image"], goldColor: "" });
+          // Use the dedicated admin upload route — returns { id, url, filename }
+          const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+          if (!res.ok) {
+            console.error("[ImageManager] upload failed:", res.status, await res.text());
+            continue;
           }
-        } catch {
-          // skip failed file
+          const data = await res.json() as { id?: string | number; url?: string; filename?: string };
+          if (data?.id) {
+            // Build a minimal media-like object Payload can store as a relationship
+            newEntries.push({
+              image: { id: data.id, url: data.url, filename: data.filename } as GalleryEntry["image"],
+              goldColor: "",
+            });
+          }
+        } catch (err) {
+          console.error("[ImageManager] upload error:", err);
         }
       }
       if (newEntries.length > 0) {

@@ -20,7 +20,8 @@
     "seed:reviews": "tsx --env-file=.env.local scripts/seed-reviews.ts",
     "seed:trust-badges": "tsx --env-file=.env.local scripts/seed-trust-badges.ts",
     "seed:faqs": "tsx --env-file=.env.local scripts/seed-faqs.ts",
-    "migrate": "payload migrate --env-file=.env.local"
+    "migrate": "payload migrate --env-file=.env.local",
+    "migrate:ci": "payload migrate"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
