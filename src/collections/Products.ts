@@ -133,11 +133,31 @@ export const Products: CollectionConfig = {
         },
       ],
     },
+    // Per-colour hero images — managed via ProductImageManager UI; hidden from default Payload form
+    {
+      name: "heroImageYellow",
+      type: "upload",
+      relationTo: "media",
+      admin: { hidden: true, description: "Hero image for Yellow Gold variant." },
+    },
+    {
+      name: "heroImageWhite",
+      type: "upload",
+      relationTo: "media",
+      admin: { hidden: true, description: "Hero image for White Gold / Silver / Platinum variant." },
+    },
+    {
+      name: "heroImageRose",
+      type: "upload",
+      relationTo: "media",
+      admin: { hidden: true, description: "Hero image for Rose Gold variant." },
+    },
     {
       name: "gallery",
       type: "array",
       labels: { singular: "Image", plural: "Images" },
       admin: {
+        hidden: true, // Managed exclusively via the ProductImageManager UI field below
         description:
           "All product images. Tag each with its gold color so the storefront " +
           "gallery switches images when the customer picks Yellow / White / Rose Gold. " +

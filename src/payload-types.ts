@@ -369,6 +369,18 @@ export interface Product {
    */
   defaultGoldColor?: ('yellow' | 'white' | 'rose') | null;
   /**
+   * Hero image for Yellow Gold variant.
+   */
+  heroImageYellow?: (number | null) | Media;
+  /**
+   * Hero image for White Gold / Silver / Platinum variant.
+   */
+  heroImageWhite?: (number | null) | Media;
+  /**
+   * Hero image for Rose Gold variant.
+   */
+  heroImageRose?: (number | null) | Media;
+  /**
    * All product images. Tag each with its gold color so the storefront gallery switches images when the customer picks Yellow / White / Rose Gold. Leave color as 'Any' for lifestyle/model shots that look good in all variants.
    */
   gallery?:
@@ -1192,6 +1204,9 @@ export interface ProductsSelect<T extends boolean = true> {
   stockQuantity?: T;
   heroImage?: T;
   defaultGoldColor?: T;
+  heroImageYellow?: T;
+  heroImageWhite?: T;
+  heroImageRose?: T;
   gallery?:
     | T
     | {
