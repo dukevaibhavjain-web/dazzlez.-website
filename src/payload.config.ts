@@ -114,6 +114,9 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || process.env.DATABASE_URL || "",
+      keepAlive: true,
+      idleTimeoutMillis: 600000,  // 10 min — prevents Neon idle disconnects during bulk imports
+      connectionTimeoutMillis: 30000,
     },
   }),
   sharp,

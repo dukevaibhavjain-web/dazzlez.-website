@@ -157,13 +157,21 @@ function mimeFor(filename: string): string {
 }
 
 async function main() {
-  const arg = process.argv[2];
+  const args = process.argv.slice(2).filter(a => !a.startsWith("--"));
+  const limitArg = process.argv.find(a => a.startsWith("--limit="));
+  const limit = limitArg ? parseInt(limitArg.split("=")[1]) : Infinity;
+
+  const arg = args[0];
   const inputPath = arg ? path.resolve(arg) : DEFAULT_FILE;
 
   if (!fs.existsSync(inputPath)) {
     console.error(`❌ Path not found: ${inputPath}`);
     process.exit(1);
   }
+
+  // Connect to DB first — Neon free tier auto-suspends after 5 min idle.
+  // ZIP extraction takes ~8 min, so connecting after extraction times out.
+  const payload = await getPayload({ config });
 
   let workDir = inputPath;
   let tmpDir: string | null = null;
@@ -175,10 +183,9 @@ async function main() {
   }
 
   console.log(`\n🔍 Scanning ${workDir} for product-code folders...`);
-  const productFolders = findProductFolders(workDir);
-  console.log(`   Found ${productFolders.length} product folders.\n`);
-
-  const payload = await getPayload({ config });
+  const allFolders = findProductFolders(workDir);
+  const productFolders = isFinite(limit) ? allFolders.slice(0, limit) : allFolders;
+  console.log(`   Found ${allFolders.length} product folders${isFinite(limit) ? `, importing first ${limit}` : ""}.\n`);
 
   let updated = 0;
   let skipped = 0;
