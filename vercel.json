@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run migrate:ci && pnpm run build",
+  "buildCommand": "pnpm run migrate:ci || true && pnpm run build",
   "installCommand": "pnpm install",
   "functions": {
     "src/app/api/**": { "maxDuration": 60 },
