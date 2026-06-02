@@ -416,20 +416,25 @@ export type ShapeOption = {
 
 /** Returns all active shapes sorted by sortOrder. Used by ShapeGridSection. */
 export async function getShapes(): Promise<ShapeOption[]> {
-  const payload = await getPayload({ config });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const res = await (payload as any).find({
-    collection: "shapes",
-    sort: "sortOrder",
-    limit: 50,
-    depth: 1,
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (res.docs as any[]).map((s) => ({
-    name: s.name,
-    slug: s.slug,
-    iconUrl: mediaUrl(s.icon),
-  }));
+  try {
+    const payload = await getPayload({ config });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await (payload as any).find({
+      collection: "shapes",
+      sort: "sortOrder",
+      limit: 50,
+      depth: 1,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (res.docs as any[]).map((s) => ({
+      name: s.name,
+      slug: s.slug,
+      iconUrl: mediaUrl(s.icon),
+    }));
+  } catch {
+    // Postgres unavailable (e.g. cold Neon instance during build) — return empty
+    return [];
+  }
 }
 
 /**

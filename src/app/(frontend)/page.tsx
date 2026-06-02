@@ -9,8 +9,10 @@ import { FeaturedProductsSection } from "@/components/storefront/home/FeaturedPr
 import { CustomizationChatSection } from "@/components/storefront/home/CustomizationChatSection";
 import { NewsletterSection } from "@/components/storefront/home/NewsletterSection";
 
-// ISR: cache the page shell for 5 minutes (live prices are fetched client-side on PDP)
-export const revalidate = 300;
+// Force dynamic so Next.js never attempts a static pre-render during build
+// (Neon free-tier cold-start causes connection timeouts in the build env).
+// ISR can be re-enabled once a connection proxy / dedicated DB is in place.
+export const dynamic = "force-dynamic";
 
 // ── Default sections shown when CMS has no data yet ─────────────────────────
 // Mirrors the previous hardcoded homepage so the page is never blank.
