@@ -69,7 +69,7 @@ export async function GET(req: Request) {
     );
     await run(
       "Record migration",
-      `INSERT INTO payload_migrations (name, batch, "updatedAt", "createdAt") VALUES ('20260601_103639', 1, now(), now()) ON CONFLICT DO NOTHING`,
+      `INSERT INTO payload_migrations (name, batch, updated_at, created_at) VALUES ('20260601_103639', 1, now(), now()) ON CONFLICT DO NOTHING`,
     );
 
     return Response.json({ ok: true, results });
