@@ -31,6 +31,30 @@ interface RevenueMetrics {
   aov: number; // average order value
 }
 
+interface BlogMetrics {
+  totalBlogViews: number;
+  avgEngagementRate: number;
+  topBlogs: Array<{
+    slug: string;
+    title: string;
+    views: number;
+    scrolls: number;
+    engagementRate: number;
+    avgTimeOnPage: number;
+  }>;
+  slotPerformance: Array<{
+    slot: string;
+    views: number;
+    avgEngagement: number;
+    avgTimeOnPage: number;
+  }>;
+  recentBlogs: Array<{
+    slug: string;
+    views: number;
+    publishedAt: string;
+  }>;
+}
+
 interface MetricCard {
   label: string;
   value: string | number;
@@ -40,6 +64,7 @@ interface MetricCard {
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"commerce" | "blog">("commerce");
   const [funnelMetrics, setFunnelMetrics] = useState<FunnelMetrics>({
     viewContent: 0,
     addToCart: 0,
@@ -51,6 +76,13 @@ export default function AnalyticsPage() {
     totalOrders: 0,
     conversionRate: 0,
     aov: 0,
+  });
+  const [blogMetrics, setBlogMetrics] = useState<BlogMetrics>({
+    totalBlogViews: 0,
+    avgEngagementRate: 0,
+    topBlogs: [],
+    slotPerformance: [],
+    recentBlogs: [],
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +100,7 @@ export default function AnalyticsPage() {
       const data = await response.json();
       setFunnelMetrics(data.funnel);
       setRevenueMetrics(data.revenue);
+      if (data.blog) setBlogMetrics(data.blog);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -137,6 +170,33 @@ export default function AnalyticsPage() {
         </button>
       </div>
 
+      {/* Tabs */}
+      <div style={styles.tabs}>
+        <button
+          onClick={() => setActiveTab("commerce")}
+          style={{
+            ...styles.tabButton,
+            borderBottom: activeTab === "commerce" ? "2px solid #3b82f6" : "2px solid transparent",
+            color: activeTab === "commerce" ? "#3b82f6" : "#6b7280",
+          }}
+        >
+          Commerce
+        </button>
+        <button
+          onClick={() => setActiveTab("blog")}
+          style={{
+            ...styles.tabButton,
+            borderBottom: activeTab === "blog" ? "2px solid #3b82f6" : "2px solid transparent",
+            color: activeTab === "blog" ? "#3b82f6" : "#6b7280",
+          }}
+        >
+          Blog Performance
+        </button>
+      </div>
+
+      {/* Commerce Tab */}
+      {activeTab === "commerce" && (
+        <>
       {/* Metric Cards */}
       <div style={styles.cardGrid}>
         {metricCards.map((card) => (
@@ -190,6 +250,113 @@ export default function AnalyticsPage() {
           tracked via Google Analytics 4 and Meta Pixel as well.
         </p>
       </div>
+        </>
+      )}
+
+      {/* Blog Tab */}
+      {activeTab === "blog" && (
+        <>
+          {/* Blog Metrics Cards */}
+          <div style={styles.cardGrid}>
+            <div style={{ ...styles.card, borderLeft: "4px solid #10b981" }}>
+              <div style={styles.cardLabel}>Total Blog Views</div>
+              <div style={styles.cardValue}>{blogMetrics.totalBlogViews.toLocaleString()}</div>
+              <div style={styles.cardSubtext}>All published blogs</div>
+            </div>
+            <div style={{ ...styles.card, borderLeft: "4px solid #f59e0b" }}>
+              <div style={styles.cardLabel}>Avg. Engagement Rate</div>
+              <div style={styles.cardValue}>{blogMetrics.avgEngagementRate.toFixed(1)}%</div>
+              <div style={styles.cardSubtext}>Scroll depth</div>
+            </div>
+          </div>
+
+          {/* Top Blogs */}
+          {blogMetrics.topBlogs.length > 0 && (
+            <div style={styles.section}>
+              <h2>Top Performing Blogs</h2>
+              <div style={styles.tableContainer}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeader}>Blog</th>
+                      <th style={styles.tableHeader}>Views</th>
+                      <th style={styles.tableHeader}>Engagement Rate</th>
+                      <th style={styles.tableHeader}>Avg. Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {blogMetrics.topBlogs.map((blog) => (
+                      <tr key={blog.slug} style={styles.tableRow}>
+                        <td style={styles.tableCell}>
+                          <strong>{blog.title}</strong>
+                        </td>
+                        <td style={styles.tableCell}>{blog.views.toLocaleString()}</td>
+                        <td style={styles.tableCell}>{blog.engagementRate.toFixed(1)}%</td>
+                        <td style={styles.tableCell}>{blog.avgTimeOnPage}s</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* A/B Test Performance */}
+          {blogMetrics.slotPerformance.length > 0 && (
+            <div style={styles.section}>
+              <h2>Publish Time A/B Test Performance</h2>
+              <div style={styles.cardGrid}>
+                {blogMetrics.slotPerformance.map((slot) => (
+                  <div key={slot.slot} style={{ ...styles.card, borderLeft: "4px solid #8b5cf6" }}>
+                    <div style={styles.cardLabel}>{slot.slot}</div>
+                    <div style={styles.cardValue}>{slot.views} views</div>
+                    <div style={styles.cardSubtext}>
+                      {slot.avgEngagement.toFixed(1)}% engagement · {slot.avgTimeOnPage}s avg
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Blogs */}
+          {blogMetrics.recentBlogs.length > 0 && (
+            <div style={styles.section}>
+              <h2>Recently Published</h2>
+              <div style={styles.tableContainer}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeader}>Blog</th>
+                      <th style={styles.tableHeader}>Published</th>
+                      <th style={styles.tableHeader}>Views</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {blogMetrics.recentBlogs.map((blog) => (
+                      <tr key={blog.slug} style={styles.tableRow}>
+                        <td style={styles.tableCell}>
+                          <strong>{blog.slug}</strong>
+                        </td>
+                        <td style={styles.tableCell}>
+                          {new Date(blog.publishedAt).toLocaleDateString()}
+                        </td>
+                        <td style={styles.tableCell}>{blog.views.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {blogMetrics.totalBlogViews === 0 && (
+            <div style={styles.info}>
+              <p>📝 No blog analytics data yet. Blogs will start appearing here once published and viewed.</p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -337,5 +504,44 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "6px",
     fontSize: "13px",
     borderLeft: "4px solid #3b82f6",
+  },
+  tabs: {
+    display: "flex",
+    gap: "24px",
+    marginBottom: "24px",
+    borderBottom: "1px solid #e5e7eb",
+  },
+  tabButton: {
+    padding: "12px 0",
+    fontSize: "14px",
+    fontWeight: "600",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  tableContainer: {
+    marginTop: "16px",
+    overflowX: "auto",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: "13px",
+  },
+  tableHeader: {
+    padding: "12px 8px",
+    textAlign: "left",
+    fontWeight: "600",
+    color: "#6b7280",
+    borderBottom: "1px solid #e5e7eb",
+    backgroundColor: "#f3f4f6",
+  },
+  tableRow: {
+    borderBottom: "1px solid #e5e7eb",
+  },
+  tableCell: {
+    padding: "12px 8px",
+    color: "#374151",
   },
 };

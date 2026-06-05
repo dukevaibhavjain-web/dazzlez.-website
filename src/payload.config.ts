@@ -26,11 +26,16 @@ import { RateDiamond } from "./collections/RateDiamond";
 import { RateGold } from "./collections/RateGold";
 import { Shapes } from "./collections/Shapes";
 import { SubCategories } from "./collections/SubCategories";
+import { Blogs } from "./collections/Blogs";
+import { BlogCategories } from "./collections/BlogCategories";
+import { BlogTags } from "./collections/BlogTags";
+import { KeywordBank } from "./collections/KeywordBank";
 import { ChatbotConfig } from "./globals/ChatbotConfig";
 import { FeatureFlags } from "./globals/FeatureFlags";
 import { HomePage } from "./globals/HomePage";
 import { SiteSettings } from "./globals/SiteSettings";
 import { TryAtHomeSettings } from "./globals/TryAtHomeSettings";
+import { BlogTimingSettings } from "./globals/BlogTimingSettings";
 import { consoleEmailAdapter } from "./lib/email-console";
 
 const filename = fileURLToPath(import.meta.url);
@@ -61,8 +66,16 @@ export default buildConfig({
           path: "/analytics",
           meta: { title: "Analytics — Dazzlez" },
         },
+        blogWorkflow: {
+          Component: "@/components/admin/BlogWorkflowPage",
+          path: "/blog-workflow",
+          meta: { title: "Blog Workflow — Dazzlez" },
+        },
       },
-      afterNavLinks: ["@/components/admin/ImportNavLink#ImportNavLink"],
+      afterNavLinks: [
+        "@/components/admin/ImportNavLink#ImportNavLink",
+        "@/components/admin/BlogNavLink#BlogNavLink",
+      ],
     },
     importMap: {
       baseDir: path.resolve(dirname),
@@ -121,8 +134,13 @@ export default buildConfig({
     Orders,
     // Analytics
     Events,
+    // Blog
+    BlogCategories,
+    BlogTags,
+    KeywordBank,
+    Blogs,
   ],
-  globals: [SiteSettings, FeatureFlags, TryAtHomeSettings, HomePage, ChatbotConfig],
+  globals: [SiteSettings, FeatureFlags, TryAtHomeSettings, HomePage, ChatbotConfig, BlogTimingSettings],
   editor: lexicalEditor(),
   email: consoleEmailAdapter,
   secret: process.env.PAYLOAD_SECRET || "",

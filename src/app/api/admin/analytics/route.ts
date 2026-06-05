@@ -7,10 +7,12 @@
  * Metrics returned:
  * - Funnel: ViewContent, AddToCart, InitiateCheckout, Purchase counts
  * - Revenue: total revenue, order count, conversion rate, AOV
+ * - Blog: blog views, engagement, top blogs, slot performance
  */
 
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { calculateBlogMetrics } from "@/lib/blog/analyticsHelpers";
 
 export const dynamic = "force-dynamic";
 
@@ -69,9 +71,20 @@ export async function GET(req: Request) {
       aov,
     };
 
+    // Fetch blog metrics
+    const blogsRes = await payload.find({
+      collection: "blogs",
+      where: { status: { equals: "published" } },
+      limit: 1000,
+      depth: 0,
+    });
+
+    const blogMetrics = await calculateBlogMetrics(events, blogsRes.docs);
+
     return Response.json({
       funnel: funnelMetrics,
       revenue: revenueMetrics,
+      blog: blogMetrics,
       lastUpdated: new Date().toISOString(),
     });
   } catch (err) {
