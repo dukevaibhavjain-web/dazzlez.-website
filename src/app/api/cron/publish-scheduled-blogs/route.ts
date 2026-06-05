@@ -8,7 +8,7 @@
  * {
  *   "crons": [{
  *     "path": "/api/cron/publish-scheduled-blogs",
- *     "schedule": "*/5 * * * *"  // Every 5 minutes
+ *     "schedule": "0 * * * *"  // Every hour (adjust as needed)
  *   }]
  * }
  */
