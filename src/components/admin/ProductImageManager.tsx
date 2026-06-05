@@ -94,6 +94,7 @@ const TAB_HERO_LABEL: Record<ColorTab, string> = {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+/** Payload stores upload relationships as either a plain ID or a populated object. */
 function resolveId(v: HeroImage | GalleryEntry["image"]): string | number | null {
   if (!v) return null;
   if (typeof v === "object" && "id" in v) return v.id;
@@ -101,26 +102,59 @@ function resolveId(v: HeroImage | GalleryEntry["image"]): string | number | null
   return null;
 }
 
+/**
+ * Resolve a thumbnail URL from a media value.
+ * Checks sizes.thumb → sizes.card → thumbnailURL (Payload built-in) → url (full-res fallback).
+ * Returns "" when the value is just a numeric ID — caller must use the mediaCache.
+ */
 function resolveThumb(v: HeroImage | GalleryEntry["image"]): string {
   if (!v || typeof v !== "object") return "";
-  const m = v as { url?: string; sizes?: { thumb?: { url?: string }; card?: { url?: string } } };
-  return m.sizes?.thumb?.url ?? m.sizes?.card?.url ?? m.url ?? "";
+  const m = v as {
+    url?: string | null;
+    thumbnailURL?: string | null;
+    sizes?: { thumb?: { url?: string | null }; card?: { url?: string | null } };
+  };
+  return (
+    m.sizes?.thumb?.url ??
+    m.sizes?.card?.url ??
+    m.thumbnailURL ??
+    m.url ??
+    ""
+  );
 }
 
 function resolveName(v: HeroImage | GalleryEntry["image"]): string {
-  if (!v || typeof v !== "object") return String(v ?? "");
+  if (!v || typeof v !== "object") return "";
   return (v as { filename?: string }).filename ?? "";
 }
 
-function buildSlots(gallery: GalleryEntry[]): ImageSlot[] {
+type MediaCacheEntry = { thumbUrl: string; url: string; filename: string };
+
+function buildSlots(
+  gallery: GalleryEntry[],
+  mediaCache: Map<string | number, MediaCacheEntry>,
+): ImageSlot[] {
   return gallery
     .map((entry, i) => {
       const imgId = resolveId(entry.image);
       if (!imgId) return null;
+
+      // Prefer resolved thumb from the populated object; fall back to the cache
+      // (populated when product is fetched on mount, or after a fresh upload).
+      let url = resolveThumb(entry.image);
+      let filename = resolveName(entry.image);
+      if (!url || !filename) {
+        const cached = mediaCache.get(imgId);
+        if (cached) {
+          url      = url      || cached.thumbUrl || cached.url;
+          filename = filename || cached.filename;
+        }
+      }
+
       return {
         id: imgId,
-        url: resolveThumb(entry.image),
-        filename: resolveName(entry.image),
+        url,
+        filename,
         galleryIndex: i,
         goldColor: (entry.goldColor ?? "") as ImageSlot["goldColor"],
       };
@@ -185,11 +219,80 @@ const ProductImageManager = () => {
   const [hoveredId, setHoveredId]   = useState<string | number | null>(null);
   const [uploading, setUploading]   = useState(false);
   const [dragOver,  setDragOver]    = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── derived data ── (declared early so galleryRef can use it) ─────────────
+  // Keep a ref to the latest gallery so uploadFiles never captures a stale
+  // snapshot even when multiple drops fire before the first resolves.
+  // (Payload's setValue does not accept a functional updater like React setState.)
+  const galleryRef = useRef<GalleryEntry[]>([]);
+
+  // mediaCache holds {thumbUrl, url, filename} keyed by media ID.
+  // Payload's form state stores upload-relationship values as plain IDs (numbers)
+  // rather than populated objects, so resolveThumb(123) → "". We fetch the saved
+  // product on mount to seed the cache so existing images display correctly.
+  // Newly uploaded images are added to the cache in uploadFiles.
+  const [mediaCache, setMediaCache] = useState<Map<string | number, MediaCacheEntry>>(
+    () => new Map(),
+  );
+
+  // Fetch the saved product with depth=1 on mount to populate mediaCache.
+  // This runs once per product edit session; we deliberately don't re-fetch on every
+  // change because the form state is the source of truth for gallery structure.
+  useEffect(() => {
+    if (!docId) return;
+    let cancelled = false;
+    fetch(`/api/products/${docId}?depth=1`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const map = new Map<string | number, MediaCacheEntry>();
+
+        const addMedia = (m: unknown) => {
+          if (!m || typeof m !== "object") return;
+          const media = m as {
+            id?: string | number;
+            url?: string | null;
+            thumbnailURL?: string | null;
+            filename?: string | null;
+            sizes?: { thumb?: { url?: string | null }; card?: { url?: string | null } };
+          };
+          if (!media.id) return;
+          map.set(media.id, {
+            thumbUrl:
+              media.sizes?.thumb?.url ??
+              media.sizes?.card?.url ??
+              media.thumbnailURL ??
+              media.url ??
+              "",
+            url: media.url ?? "",
+            filename: media.filename ?? "",
+          });
+        };
+
+        // Seed from hero fields
+        addMedia(data.heroImage);
+        addMedia(data.heroImageYellow);
+        addMedia(data.heroImageWhite);
+        addMedia(data.heroImageRose);
+        // Seed from gallery entries
+        for (const entry of data.gallery ?? []) {
+          addMedia(entry.image);
+        }
+        setMediaCache(map);
+      })
+      .catch(() => {}); // fail silently — form state is the fallback
+
+    return () => { cancelled = true; };
+  }, [docId]);
 
   // ── derived data ───────────────────────────────────────────────────────────
   const gallery: GalleryEntry[] = Array.isArray(galleryRaw) ? galleryRaw : [];
-  const allSlots = buildSlots(gallery);
+  // Keep ref in sync so uploadFiles always sees the latest gallery without
+  // needing gallery in its useCallback deps (avoids stale closure on rapid drops).
+  galleryRef.current = gallery;
+  const allSlots = buildSlots(gallery, mediaCache);
 
   const visibleSlots =
     activeTab === "all"
@@ -203,9 +306,10 @@ const ProductImageManager = () => {
     activeTab === "white"  ? (heroWhiteRaw  ?? heroRaw ?? null) :
                              (heroRoseRaw   ?? heroRaw ?? null);
 
-  const featuredUrl      = resolveThumb(featuredHeroRaw);
-  const featuredFilename = resolveName(featuredHeroRaw);
   const featuredId       = resolveId(featuredHeroRaw);
+  const _cachedHero      = featuredId ? mediaCache.get(featuredId) : undefined;
+  const featuredUrl      = resolveThumb(featuredHeroRaw) || _cachedHero?.thumbUrl || _cachedHero?.url || "";
+  const featuredFilename = resolveName(featuredHeroRaw) || _cachedHero?.filename || "";
 
   // Count images per tab for the tab badges
   const countForTab = (tab: ColorTab) =>
@@ -257,35 +361,63 @@ const ProductImageManager = () => {
   const uploadFiles = useCallback(
     async (files: FileList | File[]) => {
       setUploading(true);
+      setUploadError(null);
       const newEntries: GalleryEntry[] = [];
+      const errors: string[] = [];
+
       for (const file of Array.from(files)) {
         try {
           const fd = new FormData();
           fd.append("file", file);
-          // Use the dedicated admin upload route — returns { id, url, filename }
           const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+          const data = await res.json() as {
+            id?: string | number;
+            url?: string;
+            filename?: string;
+            error?: string;
+            sizes?: { thumb?: { url?: string }; card?: { url?: string } };
+          };
           if (!res.ok) {
-            console.error("[ImageManager] upload failed:", res.status, await res.text());
+            errors.push(`${file.name}: ${data.error ?? `HTTP ${res.status}`}`);
             continue;
           }
-          const data = await res.json() as { id?: string | number; url?: string; filename?: string };
           if (data?.id) {
-            // Build a minimal media-like object Payload can store as a relationship
+            // Add to mediaCache so the thumbnail displays immediately (before save)
+            setMediaCache((prev) => {
+              const next = new Map(prev);
+              next.set(data.id!, {
+                thumbUrl: data.sizes?.thumb?.url ?? data.sizes?.card?.url ?? data.url ?? "",
+                url: data.url ?? "",
+                filename: data.filename ?? "",
+              });
+              return next;
+            });
             newEntries.push({
-              image: { id: data.id, url: data.url, filename: data.filename } as GalleryEntry["image"],
+              image: {
+                id: data.id,
+                url: data.url,
+                filename: data.filename,
+                sizes: data.sizes,
+              } as GalleryEntry["image"],
               goldColor: "",
             });
           }
         } catch (err) {
-          console.error("[ImageManager] upload error:", err);
+          errors.push(`${file.name}: ${err instanceof Error ? err.message : "Network error"}`);
         }
       }
+
       if (newEntries.length > 0) {
-        setGalleryValue([...gallery, ...newEntries]);
+        // Use galleryRef.current (always up-to-date) rather than the closure's
+        // stale gallery snapshot — safe even if multiple drops are in flight.
+        setGalleryValue([...galleryRef.current, ...newEntries]);
+      }
+      if (errors.length > 0) {
+        setUploadError(errors.join(" · "));
       }
       setUploading(false);
     },
-    [gallery, setGalleryValue],
+    [setGalleryValue],
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -320,7 +452,12 @@ const ProductImageManager = () => {
       onDrop={(e) => {
         e.preventDefault();
         setDragOver(false);
-        if (e.dataTransfer.files.length > 0) void uploadFiles(e.dataTransfer.files);
+        if (e.dataTransfer.files.length > 0) {
+          uploadFiles(e.dataTransfer.files).catch((err) => {
+            setUploadError(err instanceof Error ? err.message : "Upload failed");
+            setUploading(false);
+          });
+        }
       }}
     >
       {/* ── header ─────────────────────────────────────────────────────────── */}
@@ -361,6 +498,34 @@ const ProductImageManager = () => {
           onChange={(e) => { if (e.target.files?.length) void uploadFiles(e.target.files); e.target.value = ""; }}
         />
       </div>
+
+      {/* Upload error banner */}
+      {uploadError && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: "8px 12px",
+            background: "#fff2f0",
+            border: "1px solid #ffccc7",
+            borderRadius: 4,
+            fontSize: 12,
+            color: "#cf1322",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 8,
+          }}
+        >
+          <span>⚠️ Upload failed — {uploadError}</span>
+          <button
+            type="button"
+            onClick={() => setUploadError(null)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#cf1322", fontSize: 14, lineHeight: 1, padding: 0, flexShrink: 0 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── two-panel body ─────────────────────────────────────────────────── */}
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>

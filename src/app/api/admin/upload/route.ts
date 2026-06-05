@@ -56,12 +56,28 @@ export async function POST(req: Request) {
       },
     });
 
+    const d = doc as {
+      id: string | number;
+      url?: string | null;
+      filename?: string | null;
+      width?: number | null;
+      height?: number | null;
+      thumbnailURL?: string | null;
+      sizes?: {
+        thumb?: { url?: string | null };
+        card?: { url?: string | null };
+        zoom?: { url?: string | null };
+      };
+    };
+
     return Response.json({
-      id: doc.id,
-      url: doc.url,
-      filename: doc.filename,
-      width: (doc as { width?: number }).width ?? null,
-      height: (doc as { height?: number }).height ?? null,
+      id: d.id,
+      url: d.url,
+      filename: d.filename,
+      width: d.width ?? null,
+      height: d.height ?? null,
+      thumbnailURL: d.thumbnailURL ?? null,
+      sizes: d.sizes ?? null,
     });
   } catch (err) {
     console.error("[admin/upload]", err);

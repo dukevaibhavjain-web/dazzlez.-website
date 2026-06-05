@@ -48,6 +48,16 @@ export default buildConfig({
   ],
   admin: {
     user: "users",
+    components: {
+      views: {
+        bulkImport: {
+          Component: "@/components/admin/BulkImportPage#BulkImportPage",
+          path: "/import",
+          meta: { title: "Bulk Import — Dazzlez" },
+        },
+      },
+      afterNavLinks: ["@/components/admin/ImportNavLink#ImportNavLink"],
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },
