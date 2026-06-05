@@ -4,6 +4,7 @@ import "./styles.css";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
 import { TrackingScripts } from "@/components/storefront/TrackingScripts";
+import { buildOrganizationSchema, buildLocalBusinessSchema } from "@/lib/seo/schemas";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,10 @@ const cormorant = Cormorant_Garamond({
   weight: ["400", "500", "600", "700"],
 });
 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thedazzlez.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
   title: {
     default: "The Dazzlez — Pure & Guilt Free Jewelry",
     template: "%s | The Dazzlez",
@@ -53,6 +57,20 @@ export default function FrontendLayout({
         suppressHydrationWarning
       >
         <TrackingScripts />
+        {/* Organization Schema — visible on all pages */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(buildOrganizationSchema(baseUrl)),
+          }}
+        />
+        {/* LocalBusiness Schema — extends Organization with address, hours, service area */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(buildLocalBusinessSchema(baseUrl)),
+          }}
+        />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

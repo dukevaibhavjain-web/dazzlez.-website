@@ -14,8 +14,10 @@ import { FilterBar } from "@/components/storefront/FilterBar";
 import { ActiveFilterChips } from "@/components/storefront/ActiveFilterChips";
 import { CollectionBanner } from "@/components/storefront/CollectionBanner";
 import { InfiniteProductGrid } from "@/components/storefront/InfiniteProductGrid";
+import { Breadcrumb } from "@/components/storefront/Breadcrumb";
 
 const PAGE_SIZE = 48;
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://thedazzlez.com";
 
 type Props = {
   params: Promise<{ category: string }>;
@@ -29,6 +31,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${cat.name} — Lab-Grown & Natural Diamond ${cat.name}`,
     description: `Shop ${cat.name.toLowerCase()} at Dazzlez. Transparent pricing, certified diamonds, made to order.`,
+    alternates: {
+      canonical: `${BASE_URL}/collections/${category}`,
+    },
   };
 }
 
@@ -88,8 +93,16 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   // Filters without `page` — InfiniteProductGrid manages page internally
   const { page: _page, ...filtersForClient } = filters;
 
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: cat.name, href: `/collections/${category}` },
+  ];
+
   return (
     <>
+      {/* Breadcrumb navigation */}
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* Full-width banner image */}
       <CollectionBanner banner={banner} />
 

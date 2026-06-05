@@ -20,6 +20,7 @@
 import { Suspense, useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { trackPurchase } from "@/lib/analytics/track";
 
 type VerifyResult = {
   ok: boolean;
@@ -81,6 +82,8 @@ function CallbackInner() {
         }
 
         if (data.paymentStatus === "captured") {
+          // Track Purchase event
+          trackPurchase(data.totalInr || 0, data.orderId || orderId, 1);
           clearCart();
           router.replace(`/order-confirmation/${orderId}`);
           return;

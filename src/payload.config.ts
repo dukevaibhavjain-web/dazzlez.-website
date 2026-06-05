@@ -10,6 +10,7 @@ import { Categories } from "./collections/Categories";
 import { ColorStones } from "./collections/ColorStones";
 import { Customers } from "./collections/Customers";
 import { DiamondCategories } from "./collections/DiamondCategories";
+import { Events } from "./collections/Events";
 import { FxRates } from "./collections/FxRates";
 import { MakingRules } from "./collections/MakingRules";
 import { Occasions } from "./collections/Occasions";
@@ -54,6 +55,11 @@ export default buildConfig({
           Component: "@/components/admin/BulkImportPage#BulkImportPage",
           path: "/import",
           meta: { title: "Bulk Import — Dazzlez" },
+        },
+        analytics: {
+          Component: "@/components/admin/AnalyticsPage",
+          path: "/analytics",
+          meta: { title: "Analytics — Dazzlez" },
         },
       },
       afterNavLinks: ["@/components/admin/ImportNavLink#ImportNavLink"],
@@ -113,6 +119,8 @@ export default buildConfig({
     Customers,
     TryAtHomeLeads,
     Orders,
+    // Analytics
+    Events,
   ],
   globals: [SiteSettings, FeatureFlags, TryAtHomeSettings, HomePage, ChatbotConfig],
   editor: lexicalEditor(),

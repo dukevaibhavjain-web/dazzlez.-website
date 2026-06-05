@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ProductCardData } from "@/lib/storefront/types";
 import { formatInr } from "@/lib/storefront/types";
@@ -15,12 +16,12 @@ export function ProductCard({ product }: { product: ProductCardData }) {
     >
       <div className="aspect-square bg-cream-200 overflow-hidden relative">
         {product.heroUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.heroUrl}
             alt={product.heroAlt}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 50vw, 220px"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted text-sm">

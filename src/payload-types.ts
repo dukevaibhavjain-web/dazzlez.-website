@@ -89,6 +89,7 @@ export interface Config {
     customers: Customer;
     'try-at-home-leads': TryAtHomeLead;
     orders: Order;
+    events: Event;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -117,6 +118,7 @@ export interface Config {
     customers: CustomersSelect<false> | CustomersSelect<true>;
     'try-at-home-leads': TryAtHomeLeadsSelect<false> | TryAtHomeLeadsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -893,6 +895,94 @@ export interface Order {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  /**
+   * Anonymous visitor ID (dz_timestamp_random)
+   */
+  visitorId: string;
+  /**
+   * Session ID (persists across page reloads)
+   */
+  sessionId: string;
+  eventName:
+    | 'ViewContent'
+    | 'AddToCart'
+    | 'ViewCart'
+    | 'InitiateCheckout'
+    | 'Purchase'
+    | 'BlogView'
+    | 'BlogScroll'
+    | 'BlogEngagement'
+    | 'BlogProductClick'
+    | 'Search'
+    | 'SearchResultClick'
+    | 'ChatbotOpened'
+    | 'DesignAdvisorStart'
+    | 'DesignAdvisorComplete'
+    | 'Contact'
+    | 'Lead';
+  /**
+   * Flexible event payload (product code, price, blog slug, etc.)
+   */
+  eventData?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  pageUrl: string;
+  /**
+   * HTTP referrer header
+   */
+  referrer?: string | null;
+  /**
+   * Browser user agent string
+   */
+  userAgent?: string | null;
+  /**
+   * Anonymized IP (last octet redacted)
+   */
+  ipAddress?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  /**
+   * Revenue in INR (if purchase event)
+   */
+  revenue?: number | null;
+  currency?: string | null;
+  /**
+   * Order ID if this is a purchase event
+   */
+  orderId?: string | null;
+  /**
+   * Blog post slug if this is a blog event
+   */
+  blogSlug?: string | null;
+  /**
+   * Scroll depth 0-100% (blog events)
+   */
+  scrollDepth?: number | null;
+  /**
+   * Time on page in seconds
+   */
+  timeOnPage?: number | null;
+  /**
+   * Event timestamp (ISO 8601)
+   */
+  timestamp: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -998,6 +1088,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
       } | null);
   globalSlug?: string | null;
   user:
@@ -1503,6 +1597,33 @@ export interface OrdersSelect<T extends boolean = true> {
   gstInvoiceRequested?: T;
   trackingInfo?: T;
   adminNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  visitorId?: T;
+  sessionId?: T;
+  eventName?: T;
+  eventData?: T;
+  pageUrl?: T;
+  referrer?: T;
+  userAgent?: T;
+  ipAddress?: T;
+  utmSource?: T;
+  utmMedium?: T;
+  utmCampaign?: T;
+  utmContent?: T;
+  revenue?: T;
+  currency?: T;
+  orderId?: T;
+  blogSlug?: T;
+  scrollDepth?: T;
+  timeOnPage?: T;
+  timestamp?: T;
   updatedAt?: T;
   createdAt?: T;
 }

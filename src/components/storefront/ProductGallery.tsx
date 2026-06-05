@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export type GoldColor = "yellow" | "white" | "rose" | "";
@@ -71,14 +72,13 @@ export function ProductGallery({
           <button
             key={`${img.url}-${i}`}
             onClick={() => setActive(i)}
-            className={`shrink-0 w-16 h-16 sm:w-[90px] sm:h-[90px] rounded-lg overflow-hidden border-2 transition-all ${
+            className={`shrink-0 w-16 h-16 sm:w-[90px] sm:h-[90px] rounded-lg overflow-hidden border-2 transition-all relative ${
               i === active
                 ? "border-gold shadow-sm opacity-100"
                 : "border-transparent opacity-60 hover:opacity-90 hover:border-cream-200"
             }`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.url} alt={img.alt} className="w-full h-full object-cover" loading="lazy" />
+            <Image src={img.url} alt={img.alt} fill sizes="(max-width: 640px) 64px, 90px" className="object-cover" />
           </button>
         ))}
       </div>
@@ -93,12 +93,13 @@ export function ProductGallery({
           setOrigin("50% 50%");
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={current.url}
           alt={current.alt}
           draggable={false}
-          className="w-full h-full object-cover"
+          fill
+          sizes="(max-width: 640px) 100vw, 50vw"
+          className="object-cover"
           style={{
             transformOrigin: origin,
             transform: zoomed ? "scale(2.2)" : "scale(1)",

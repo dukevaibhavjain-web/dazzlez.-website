@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 
@@ -202,7 +203,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         {/* Brand */}
         <div className="col-span-2 md:col-span-1">
-          <img src="/logo-white.png" alt="The Dazzlez" className="h-20 w-auto object-contain mb-4" />
+          <Image src="/logo-white.png" alt="The Dazzlez" width={160} height={80} className="h-20 w-auto object-contain mb-4" />
           <p className="text-cream/50 leading-relaxed text-xs max-w-xs">
             Fine lab-grown &amp; natural diamond jewellery, BIS-hallmarked and certified.
             Crafted for love, self-worth, and everything in between.

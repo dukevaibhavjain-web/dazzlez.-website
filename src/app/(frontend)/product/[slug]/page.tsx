@@ -17,11 +17,15 @@ import {
   type ComplementaryProduct,
 } from "@/components/storefront/MatchAndShine";
 import { StickyPDPBar } from "@/components/storefront/StickyPDPBar";
+import { Breadcrumb } from "@/components/storefront/Breadcrumb";
+import { buildReviewSchema } from "@/lib/seo/schemas";
 import type { GalleryImage, GoldColor } from "@/components/storefront/ProductGallery";
 
 // Cache the static shell for 5 min (ISR). Live prices are fetched client-side
 // by the buy-box, so caching the page doesn't stale the pricing.
 export const revalidate = 300;
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://thedazzlez.com";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -42,6 +46,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: p.displayName,
     description: p.description || `${p.displayName} — certified diamond jewellery by Dazzlez.`,
     openGraph: { images: imgUrl(p.heroImage, "zoom") ? [imgUrl(p.heroImage, "zoom")!] : [] },
+    alternates: {
+      canonical: `${BASE_URL}/product/${slug}`,
+    },
   };
 }
 
@@ -190,7 +197,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   // ── Product JSON-LD schema ──────────────────────────────────────────────
   const heroImageUrl = imgUrl(product.heroImage, "zoom");
-  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://thedazzlez.com";
   const productUrl = `${BASE_URL}/product/${product.slug}`;
 
   const productSchema: Record<string, unknown> = {
@@ -223,12 +229,59 @@ export default async function ProductPage({ params, searchParams }: Props) {
       : {}),
   };
 
+  // Build breadcrumb items
+  const categoryObj = typeof product.category === "object" ? product.category : null;
+  const categorySlug = categoryObj?.slug ?? "products";
+  const categoryName = categoryObj?.name ?? "Products";
+
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: categoryName, href: `/collections/${categorySlug}` },
+    { name: product.displayName, href: `/product/${product.slug}` },
+  ];
+
+  // Build review schema if reviews exist
+  const reviewSchemas = reviews.length > 0
+    ? buildReviewSchema(
+        reviews.map((r) => ({
+          id: r.id,
+          rating: r.rating,
+          authorName: r.authorName,
+          title: r.title,
+          body: r.body,
+          reviewDate: r.reviewDate,
+        })),
+        {
+          displayName: product.displayName,
+          url: productUrl,
+          heroImageUrl,
+          sku: product.code,
+          fromPriceInr: product.fromPriceInr ?? null,
+          avgRating,
+          totalReviews,
+        }
+      )
+    : [];
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
       />
+
+      {/* Individual Review schema objects — only if reviews exist */}
+      {reviewSchemas.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(reviewSchemas),
+          }}
+        />
+      )}
+
+      {/* Breadcrumb navigation */}
+      <Breadcrumb items={breadcrumbItems} />
 
       {/* Sticky bar — slides in from top once user scrolls past the buy box */}
       <StickyPDPBar

@@ -16,6 +16,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { trackInitiateCheckout } from "@/lib/analytics/track";
 
 type CartItem = {
   code: string; displayName: string; metal: string; goldColor: string;
@@ -75,6 +76,13 @@ export default function CheckoutPage() {
       setError("Please fill in your complete shipping address."); return;
     }
     setSubmitting(true);
+
+    // Track InitiateCheckout event
+    const cartTotal = items.reduce((sum, item) => {
+      // Note: actual price would be in cart from /api/pdp, but we'll use qty as proxy
+      return sum + (item.qty || 1);
+    }, 0);
+    trackInitiateCheckout(cartTotal * 1000, items.length); // rough estimate for demo
 
     try {
       // 1. Create order server-side

@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRef } from "react";
 import type { GoldColor } from "@/components/storefront/ProductGallery";
 import { ReviewBadge } from "@/components/storefront/ReviewBadge";
+import { trackViewContent, trackAddToCart } from "@/lib/analytics/track";
 
 const WA_NUMBER = "919829115205";
 
@@ -178,10 +180,15 @@ export function ProductBuyBox({
       localStorage.setItem("dazzlez_cart", JSON.stringify(cart));
       setAdded(true);
       setTimeout(() => setAdded(false), 2500);
+
+      // Track AddToCart event
+      if (selectedTotal && selectedTotal > 0) {
+        trackAddToCart(code, metal, selectedTotal, 1);
+      }
     } catch {
       /* ignore */
     }
-  }, [code, displayName, metal, goldColor, tier, size, carat, engraving]);
+  }, [code, displayName, metal, goldColor, tier, size, carat, engraving, selectedTotal]);
 
   // Listen for the sticky bar's "Add to Cart" button — it fires this event
   // so the buy box can handle the actual cart write with current selections.
@@ -190,6 +197,13 @@ export function ProductBuyBox({
     window.addEventListener("dazzlez:add-to-cart", handler);
     return () => window.removeEventListener("dazzlez:add-to-cart", handler);
   }, [addToCart]);
+
+  // Track ViewContent event on mount
+  useEffect(() => {
+    if (code && displayName) {
+      trackViewContent(code, displayName, selectedTotal || 0);
+    }
+  }, [code, displayName]); // Only fire once on mount
 
   const savingsVsNatural = (t: number) =>
     naturalTotal && naturalTotal > 0 ? Math.round((1 - t / naturalTotal) * 100) : 0;

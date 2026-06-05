@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { HeaderActions } from "./HeaderActions";
 
@@ -35,9 +36,12 @@ export function Header() {
 
           {/* Logo — centred, given generous height */}
           <Link href="/" className="flex-shrink-0" aria-label="The Dazzlez — Home">
-            <img
+            <Image
               src="/logo-white.png"
               alt="The Dazzlez"
+              width={160}
+              height={64}
+              priority
               className="h-16 w-auto object-contain"
             />
           </Link>
