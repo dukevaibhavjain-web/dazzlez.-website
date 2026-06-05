@@ -44,13 +44,13 @@ export async function generateStaticParams() {
   const payload = await getPayload({ config });
 
   const categories = await payload.find({
-    collection: "blog-categories",
+    collection: "blog-categories" as any,
     depth: 0,
     limit: 100,
   });
 
   const tags = await payload.find({
-    collection: "blog-tags",
+    collection: "blog-tags" as any,
     depth: 0,
     limit: 100,
   });
@@ -101,7 +101,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
   if (categorySlug) {
     const categoryDocs = await payload.find({
-      collection: "blog-categories",
+      collection: "blog-categories" as any,
       where: { slug: { equals: categorySlug } },
       limit: 1,
       depth: 0,
@@ -117,7 +117,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
   if (tagSlug) {
     const tagDocs = await payload.find({
-      collection: "blog-tags",
+      collection: "blog-tags" as any,
       where: { slug: { equals: tagSlug } },
       limit: 1,
       depth: 0,
@@ -135,7 +135,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
   // Fetch blogs with pagination
   const blogs = await payload.find({
-    collection: "blogs",
+    collection: "blogs" as any,
     where,
     limit: BLOGS_PER_PAGE,
     page,
@@ -147,14 +147,14 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
   // Fetch all categories for filter chips
   const allCategories = await payload.find({
-    collection: "blog-categories",
+    collection: "blog-categories" as any,
     depth: 0,
     limit: 100,
   });
 
   // Fetch all tags for filter chips
   const allTags = await payload.find({
-    collection: "blog-tags",
+    collection: "blog-tags" as any,
     depth: 0,
     limit: 100,
   });

@@ -1,8 +1,7 @@
 import { MigrateUpArgs, MigrateDownArgs } from '@payloadcms/db-postgres';
 
 export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
-  await payload.db.drizzle.execute({
-    sql: `
+  await payload.db.drizzle.execute(`
       -- Create blog_categories table
       CREATE TABLE IF NOT EXISTS "blog_categories" (
         "id" SERIAL PRIMARY KEY,
@@ -105,14 +104,11 @@ export async function up({ payload, req }: MigrateUpArgs): Promise<void> {
       );
 
       CREATE INDEX IF NOT EXISTS "blogs_linked_collections_parent_idx" ON "blogs_linked_collections" ("parent_id");
-    `,
-    values: [],
-  });
+  `);
 }
 
 export async function down({ payload, req }: MigrateDownArgs): Promise<void> {
-  await payload.db.drizzle.execute({
-    sql: `
+  await payload.db.drizzle.execute(`
       DROP TABLE IF EXISTS "blogs_linked_collections" CASCADE;
       DROP TABLE IF EXISTS "blogs_linked_products" CASCADE;
       DROP TABLE IF EXISTS "blogs_blog_tags" CASCADE;
@@ -120,7 +116,5 @@ export async function down({ payload, req }: MigrateDownArgs): Promise<void> {
       DROP TABLE IF EXISTS "keyword_bank" CASCADE;
       DROP TABLE IF EXISTS "blog_tags" CASCADE;
       DROP TABLE IF EXISTS "blog_categories" CASCADE;
-    `,
-    values: [],
-  });
+  `);
 }

@@ -7,7 +7,7 @@ import React from "react";
 import { useConfig } from "@payloadcms/ui";
 
 export function BlogNavLink() {
-  const { admin } = useConfig();
+  const { admin } = (useConfig() as any);
 
   return (
     <a

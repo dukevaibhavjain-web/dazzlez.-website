@@ -74,7 +74,7 @@ export const KeywordBank: CollectionConfig = {
     {
       name: "blogUsed",
       type: "relationship",
-      relationTo: "blogs",
+      relationTo: "blogs" as any,
       admin: {
         description: "Blog post this keyword was used for (auto-set on content generation).",
       },

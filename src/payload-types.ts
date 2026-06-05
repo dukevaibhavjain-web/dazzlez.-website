@@ -90,6 +90,10 @@ export interface Config {
     'try-at-home-leads': TryAtHomeLead;
     orders: Order;
     events: Event;
+    'blog-categories': BlogCategory;
+    'blog-tags': BlogTag;
+    'keyword-bank': KeywordBank;
+    blogs: Blog;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -119,6 +123,10 @@ export interface Config {
     'try-at-home-leads': TryAtHomeLeadsSelect<false> | TryAtHomeLeadsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
+    'blog-categories': BlogCategoriesSelect<false> | BlogCategoriesSelect<true>;
+    'blog-tags': BlogTagsSelect<false> | BlogTagsSelect<true>;
+    'keyword-bank': KeywordBankSelect<false> | KeywordBankSelect<true>;
+    blogs: BlogsSelect<false> | BlogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -134,6 +142,7 @@ export interface Config {
     'try-at-home-settings': TryAtHomeSetting;
     'home-page': HomePage;
     'chatbot-config': ChatbotConfig;
+    'blog-timing-settings': BlogTimingSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -141,6 +150,7 @@ export interface Config {
     'try-at-home-settings': TryAtHomeSettingsSelect<false> | TryAtHomeSettingsSelect<true>;
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'chatbot-config': ChatbotConfigSelect<false> | ChatbotConfigSelect<true>;
+    'blog-timing-settings': BlogTimingSettingsSelect<false> | BlogTimingSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -983,6 +993,196 @@ export interface Event {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-categories".
+ */
+export interface BlogCategory {
+  id: number;
+  name: string;
+  /**
+   * Auto-generated from name. Used in URL and filters.
+   */
+  slug: string;
+  description?: string | null;
+  /**
+   * Lower numbers appear first in blog category navigation.
+   */
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-tags".
+ */
+export interface BlogTag {
+  id: number;
+  name: string;
+  /**
+   * Auto-generated from name.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "keyword-bank".
+ */
+export interface KeywordBank {
+  id: number;
+  keyword: string;
+  searchIntent: 'informational' | 'transactional' | 'navigational' | 'commercial';
+  volume?: ('high' | 'medium' | 'low') | null;
+  difficulty?: ('high' | 'medium' | 'low') | null;
+  /**
+   * Product category this keyword relates to.
+   */
+  relatedCategory?: (number | null) | Category;
+  /**
+   * Occasion this keyword relates to (e.g., anniversary, engagement).
+   */
+  relatedOccasion?: (number | null) | Occasion;
+  /**
+   * Blog post this keyword was used for (auto-set on content generation).
+   */
+  blogUsed?: (number | null) | Blog;
+  /**
+   * How this keyword was discovered.
+   */
+  source: 'product_catalog' | 'occasion' | 'ai_expanded' | 'manual';
+  /**
+   * Admin must approve before content generation.
+   */
+  approved?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blogs".
+ */
+export interface Blog {
+  id: number;
+  title: string;
+  /**
+   * URL-friendly slug. Auto-generated from title if empty.
+   */
+  slug: string;
+  /**
+   * Draft → Pending Approval → Scheduled → Published
+   */
+  status: 'draft' | 'pending_approval' | 'scheduled' | 'published';
+  /**
+   * 2-3 sentence summary. Used on listing page and as fallback meta description.
+   */
+  excerpt: string;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  category: number | BlogCategory;
+  tags?: (number | BlogTag)[] | null;
+  /**
+   * Products mentioned in this blog. Used for product cards inline and in sidebar.
+   */
+  linkedProducts?: (number | Product)[] | null;
+  /**
+   * Product collections mentioned in this blog (e.g., Rings, Earrings).
+   */
+  linkedCollections?: (number | Category)[] | null;
+  /**
+   * Blog cover image. If not set, placeholder is shown.
+   */
+  heroImage?: (number | null) | Media;
+  /**
+   * SVG markup for hero image (alternative to upload). Set if Claude text-rendering was used.
+   */
+  heroImageSvg?: string | null;
+  /**
+   * Auto-computed from body text word count.
+   */
+  readingTimeMinutes?: number | null;
+  /**
+   * Incremented by analytics events. Read-only.
+   */
+  viewCount?: number | null;
+  /**
+   * SEO title tag. Falls back to title if blank.
+   */
+  metaTitle?: string | null;
+  /**
+   * SEO meta description. Max 160 chars.
+   */
+  metaDescription?: string | null;
+  /**
+   * Primary SEO keyword for this blog. Used in schema markup.
+   */
+  focusKeyword?: string | null;
+  /**
+   * Related keywords for SEO. Max 10.
+   */
+  keywords?:
+    | {
+        keyword: string;
+        searchIntent?: ('informational' | 'transactional' | 'navigational' | 'commercial') | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When this blog was published. Auto-set when status → published.
+   */
+  publishedAt?: string | null;
+  /**
+   * Scheduled publish time. Used by cron to auto-publish.
+   */
+  scheduledFor?: string | null;
+  /**
+   * A/B testing slot (publish time). Auto-assigned by scheduler.
+   */
+  abTestSlot?: ('9am' | '2pm' | '7pm') | null;
+  /**
+   * Historical record of each publish attempt and performance.
+   */
+  publishingHistory?:
+    | {
+        publishedAt?: string | null;
+        abTestSlot?: string | null;
+        viewCount?: number | null;
+        /**
+         * Composite score: (scrollDepth * 0.4) + (timeOnPage * 0.4) + (productClick * 0.2)
+         */
+        engagementScore?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Metadata about AI generation (model, prompt hash, keyword used). For auditability.
+   */
+  aiGenerationMeta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1092,6 +1292,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'events';
         value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'blog-categories';
+        value: number | BlogCategory;
+      } | null)
+    | ({
+        relationTo: 'blog-tags';
+        value: number | BlogTag;
+      } | null)
+    | ({
+        relationTo: 'keyword-bank';
+        value: number | KeywordBank;
+      } | null)
+    | ({
+        relationTo: 'blogs';
+        value: number | Blog;
       } | null);
   globalSlug?: string | null;
   user:
@@ -1629,6 +1845,89 @@ export interface EventsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-categories_select".
+ */
+export interface BlogCategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-tags_select".
+ */
+export interface BlogTagsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "keyword-bank_select".
+ */
+export interface KeywordBankSelect<T extends boolean = true> {
+  keyword?: T;
+  searchIntent?: T;
+  volume?: T;
+  difficulty?: T;
+  relatedCategory?: T;
+  relatedOccasion?: T;
+  blogUsed?: T;
+  source?: T;
+  approved?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blogs_select".
+ */
+export interface BlogsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  status?: T;
+  excerpt?: T;
+  body?: T;
+  category?: T;
+  tags?: T;
+  linkedProducts?: T;
+  linkedCollections?: T;
+  heroImage?: T;
+  heroImageSvg?: T;
+  readingTimeMinutes?: T;
+  viewCount?: T;
+  metaTitle?: T;
+  metaDescription?: T;
+  focusKeyword?: T;
+  keywords?:
+    | T
+    | {
+        keyword?: T;
+        searchIntent?: T;
+        id?: T;
+      };
+  publishedAt?: T;
+  scheduledFor?: T;
+  abTestSlot?: T;
+  publishingHistory?:
+    | T
+    | {
+        publishedAt?: T;
+        abTestSlot?: T;
+        viewCount?: T;
+        engagementScore?: T;
+        id?: T;
+      };
+  aiGenerationMeta?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -2122,6 +2421,53 @@ export interface ChatbotConfig {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-timing-settings".
+ */
+export interface BlogTimingSetting {
+  id: number;
+  /**
+   * Recommended publish time slot based on A/B testing analysis.
+   */
+  recommendedSlot?: ('none' | '9am' | '2pm' | '7pm') | null;
+  /**
+   * Why this slot was recommended. Generated by Claude.
+   */
+  recommendationReason?: string | null;
+  /**
+   * When the optimization was last run.
+   */
+  lastAnalyzedAt?: string | null;
+  /**
+   * Total blogs published (used to know when enough data for analysis).
+   */
+  publishedBlogCount?: number | null;
+  /**
+   * Performance metrics per A/B test slot.
+   */
+  slotStats?:
+    | {
+        slot: string;
+        avgViews?: number | null;
+        /**
+         * Average scroll depth percentage (0-100).
+         */
+        avgScrollDepth?: number | null;
+        /**
+         * Average time on page in seconds.
+         */
+        avgTimeOnPage?: number | null;
+        /**
+         * How many blogs tested with this slot.
+         */
+        blogCount?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -2361,6 +2707,29 @@ export interface ChatbotConfigSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-timing-settings_select".
+ */
+export interface BlogTimingSettingsSelect<T extends boolean = true> {
+  recommendedSlot?: T;
+  recommendationReason?: T;
+  lastAnalyzedAt?: T;
+  publishedBlogCount?: T;
+  slotStats?:
+    | T
+    | {
+        slot?: T;
+        avgViews?: T;
+        avgScrollDepth?: T;
+        avgTimeOnPage?: T;
+        blogCount?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;

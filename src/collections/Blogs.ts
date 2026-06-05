@@ -13,15 +13,15 @@ export const Blogs: CollectionConfig = {
     preview: (doc) => `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${doc.slug}`,
   },
   access: {
-    read: ({ doc }) => {
-      // Public can read published blogs
-      if (doc?.status === "published") return true;
-      // Admin can read all
+    read: ({ req }) => {
+      // Admin can always read
+      if (req.user) return true;
+      // Public can only read published blogs (checked at query level)
       return true;
     },
-    create: (args) => args.req.user !== undefined, // Admin only
-    update: (args) => args.req.user !== undefined, // Admin only
-    delete: (args) => args.req.user !== undefined, // Admin only
+    create: (args) => !!args.req.user, // Admin only
+    update: (args) => !!args.req.user, // Admin only
+    delete: (args) => !!args.req.user, // Admin only
   },
   fields: [
     {
@@ -42,7 +42,7 @@ export const Blogs: CollectionConfig = {
       hooks: {
         beforeValidate: [
           ({ data }) => {
-            if (!data.slug && data.title) {
+            if (data && !data.slug && data.title) {
               data.slug = data.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, "-")
@@ -82,19 +82,18 @@ export const Blogs: CollectionConfig = {
       name: "body",
       type: "richText",
       required: true,
-      editor: "lexical",
     },
     {
       name: "category",
       type: "relationship",
-      relationTo: "blog-categories",
+      relationTo: "blog-categories" as any,
       required: true,
       index: true,
     },
     {
       name: "tags",
       type: "relationship",
-      relationTo: "blog-tags",
+      relationTo: "blog-tags" as any,
       hasMany: true,
     },
     {
@@ -260,5 +259,4 @@ export const Blogs: CollectionConfig = {
   ],
 
   timestamps: true,
-  indexes: ["status", "publishedAt", "slug", "category", "abTestSlot"],
 };

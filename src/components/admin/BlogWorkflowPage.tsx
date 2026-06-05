@@ -255,7 +255,6 @@ export function BlogWorkflowPage() {
                   style={{
                     ...cardStyle,
                     cursor: "pointer",
-                    _hover: { backgroundColor: "var(--theme-elevation-50)" },
                   }}
                 >
                   <div

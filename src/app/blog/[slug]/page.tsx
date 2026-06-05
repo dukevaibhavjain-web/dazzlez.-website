@@ -28,6 +28,7 @@ interface BlogDoc {
   linkedCollections?: any[];
   heroImage?: { url: string; alt: string };
   heroImageSvg?: string;
+  abTestSlot?: string;
 }
 
 interface PageProps {
@@ -38,7 +39,7 @@ export async function generateStaticParams() {
   const payload = await getPayload({ config });
 
   const blogs = await payload.find({
-    collection: "blogs",
+    collection: "blogs" as any,
     where: { status: { equals: "published" } },
     depth: 0,
     limit: 100,
@@ -127,7 +128,7 @@ function renderLexicalContent(lexicalData: any) {
 
         if (node.type === "heading") {
           const level = node.tag || "h2";
-          const HeadingTag = level as keyof JSX.IntrinsicElements;
+          const HeadingTag = level as any;
           const sizes: Record<string, number> = {
             h1: 24,
             h2: 20,
@@ -199,7 +200,7 @@ export async function generateMetadata({ params }: PageProps) {
   const payload = await getPayload({ config });
 
   const blogs = await payload.find({
-    collection: "blogs",
+    collection: "blogs" as any,
     where: { and: [{ status: { equals: "published" } }, { slug: { equals: slug } }] },
     depth: 1,
     limit: 1,
@@ -229,7 +230,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
   const payload = await getPayload({ config });
 
   const blogs = await payload.find({
-    collection: "blogs",
+    collection: "blogs" as any,
     where: { and: [{ status: { equals: "published" } }, { slug: { equals: slug } }] },
     depth: 2,
     limit: 1,
@@ -243,7 +244,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
 
   // Fetch related blogs (same category, different post)
   const relatedBlogs = await payload.find({
-    collection: "blogs",
+    collection: "blogs" as any,
     where: {
       and: [
         { status: { equals: "published" } },

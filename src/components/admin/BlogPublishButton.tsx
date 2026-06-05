@@ -12,7 +12,7 @@ type Status = "draft" | "pending_approval" | "scheduled" | "published";
 
 export function BlogPublishButton() {
   const { id } = useDocumentInfo();
-  const { getFieldValue, setFieldValue } = useFormFields();
+  const { getFieldValue, setFieldValue } = (useFormFields as any)();
   const [isLoading, setIsLoading] = useState(false);
 
   const status = (getFieldValue("status") as Status) || "draft";

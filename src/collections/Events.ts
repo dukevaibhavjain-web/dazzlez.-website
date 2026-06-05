@@ -33,14 +33,14 @@ export const Events: CollectionConfig = {
       name: "visitorId",
       type: "text",
       required: true,
-      indexed: true,
+      index: true,
       admin: { description: "Anonymous visitor ID (dz_timestamp_random)" },
     },
     {
       name: "sessionId",
       type: "text",
       required: true,
-      indexed: true,
+      index: true,
       admin: { description: "Session ID (persists across page reloads)" },
     },
 
@@ -49,7 +49,7 @@ export const Events: CollectionConfig = {
       name: "eventName",
       type: "select",
       required: true,
-      indexed: true,
+      index: true,
       options: [
         // Product funnel
         { label: "ViewContent", value: "ViewContent" },
@@ -88,7 +88,7 @@ export const Events: CollectionConfig = {
       name: "pageUrl",
       type: "text",
       required: true,
-      indexed: true,
+      index: true,
     },
 
     {
@@ -113,17 +113,17 @@ export const Events: CollectionConfig = {
     {
       name: "utmSource",
       type: "text",
-      indexed: true,
+      index: true,
     },
     {
       name: "utmMedium",
       type: "text",
-      indexed: true,
+      index: true,
     },
     {
       name: "utmCampaign",
       type: "text",
-      indexed: true,
+      index: true,
     },
     {
       name: "utmContent",
@@ -144,7 +144,7 @@ export const Events: CollectionConfig = {
     {
       name: "orderId",
       type: "text",
-      indexed: true,
+      index: true,
       admin: { description: "Order ID if this is a purchase event" },
     },
 
@@ -152,7 +152,7 @@ export const Events: CollectionConfig = {
     {
       name: "blogSlug",
       type: "text",
-      indexed: true,
+      index: true,
       admin: { description: "Blog post slug if this is a blog event" },
     },
     {
@@ -171,7 +171,7 @@ export const Events: CollectionConfig = {
       name: "timestamp",
       type: "date",
       required: true,
-      indexed: true,
+      index: true,
       admin: { description: "Event timestamp (ISO 8601)" },
     },
   ],

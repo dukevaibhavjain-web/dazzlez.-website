@@ -10,7 +10,7 @@ import { useDocumentInfo, useFormFields } from "@payloadcms/ui";
 
 export function BlogAIActions() {
   const { id } = useDocumentInfo();
-  const { getFieldValue, setFieldValue } = useFormFields();
+  const { getFieldValue, setFieldValue } = (useFormFields as any)();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
   const title = getFieldValue("title") as string;
