@@ -106,7 +106,10 @@ export function getMetalOptions(product: { metals?: Array<{ purity: string }> })
   const golds = (["9K", "14K", "18K", "22K"] as Purity[]).filter((g) =>
     product.metals?.some((m) => m.purity === g),
   );
-  const all: Purity[] = [...golds, "Silver925", "Platinum"];
+  const nonGolds = (["Silver925", "Platinum"] as Purity[]).filter((ng) =>
+    product.metals?.some((m) => m.purity === ng),
+  );
+  const all: Purity[] = [...golds, ...nonGolds];
   return all.map((v) => ({ value: v, label: LABELS[v] }));
 }
 

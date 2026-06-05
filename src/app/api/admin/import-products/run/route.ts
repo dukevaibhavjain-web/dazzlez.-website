@@ -47,12 +47,11 @@ export async function POST(req: Request) {
           code: p.code,
           slug,
           displayName: p.displayName,
-          description: p.description ?? "",
+          description: p.description ?? null, // null for falsy strings, not empty string
           category: p.categoryId,
           primaryShape: p.shapeId ?? null,
           isSolitaire: p.isSolitaire,
           isRing: p.isRing,
-          fulfillmentType: "made_to_order",
           status: "draft",
           metals: p.metals,
           diamonds: p.diamonds.map((d) => ({
@@ -66,10 +65,13 @@ export async function POST(req: Request) {
           remarks: p.remarks,
         };
 
+        // fulfillmentType defaults to "made_to_order" only on creation.
+        // For updates, omit it to preserve the existing admin-set value.
         if (p.dbStatus === "existing" && p.dbId != null) {
           await payload.update({ collection: "products", id: p.dbId, data });
           results.push({ code: p.code, action: "updated" });
         } else {
+          data.fulfillmentType = "made_to_order";
           await payload.create({ collection: "products", data });
           results.push({ code: p.code, action: "created" });
         }

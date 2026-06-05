@@ -130,7 +130,7 @@ function parseWorkbook(wb: xlsx.WorkBook): Omit<ParsedProduct, "categoryId" | "s
     for (const row of rows) {
       const code = strOrNull(row["STYLE CODE"]);
       if (code) {
-        currentCode = code;
+        currentCode = code.toUpperCase();
         if (!designs.has(code)) {
           const g14 = numOr0(row["GOLD WEIGHT 14K"]);
           let g9 = numOr0(row["GOLD WEIGHT 9K"]);
@@ -194,7 +194,7 @@ function parseWorkbook(wb: xlsx.WorkBook): Omit<ParsedProduct, "categoryId" | "s
     for (const d of designs.values()) {
       if (d.metals.length === 0) continue;
       all.push({
-        code: d.code,
+        code: d.code.toUpperCase(), // Normalize to uppercase for consistent lookups
         categorySlug: d.categorySlug,
         shapeSlug: d.shapeSlug,
         displayName: d.displayName,
@@ -203,7 +203,7 @@ function parseWorkbook(wb: xlsx.WorkBook): Omit<ParsedProduct, "categoryId" | "s
         metals: d.metals,
         diamonds: d.diamonds,
         isSolitaire: d.isSolitaire,
-        isRing: d.categorySlug === "rings",
+        isRing: d.categorySlug === "rings" || d.categorySlug === "bands",
       });
     }
   }

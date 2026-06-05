@@ -56,6 +56,16 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const heroU = imgUrl(product.heroImage);
   if (heroU) images.push({ url: heroU, alt: product.displayName, goldColor: "" });
 
+  // Per-color hero images (if set by admin): take priority over the generic hero for their respective variants.
+  const heroYellow = imgUrl(product.heroImageYellow);
+  if (heroYellow) images.push({ url: heroYellow, alt: product.displayName, goldColor: "yellow" });
+
+  const heroWhite = imgUrl(product.heroImageWhite);
+  if (heroWhite) images.push({ url: heroWhite, alt: product.displayName, goldColor: "white" });
+
+  const heroRose = imgUrl(product.heroImageRose);
+  if (heroRose) images.push({ url: heroRose, alt: product.displayName, goldColor: "rose" });
+
   // Gallery: carry through the goldColor tag set by admin in Image Manager.
   for (const g of product.gallery ?? []) {
     const u = imgUrl(g.image);

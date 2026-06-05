@@ -334,12 +334,13 @@ export function BulkImportPage() {
       return;
     }
 
-    // Update product rows based on results
+    // Update per-row progress UI — counts already set from server summary above,
+    // so only call updateRow here (no local incrementing).
     for (const r of productResults) {
-      if (r.action === "created") { sum.created++; updateRow(r.code, { step: "product-ok", productNote: "✅ Created" }); }
-      else if (r.action === "updated") { sum.updated++; updateRow(r.code, { step: "product-ok", productNote: "♻️ Updated" }); }
-      else if (r.action === "skipped") { sum.skipped++; updateRow(r.code, { step: "product-err", productNote: `⏭️ ${r.error ?? "Skipped"}` }); }
-      else { sum.productErrors++; updateRow(r.code, { step: "product-err", productNote: `❌ ${r.error}` }); }
+      if (r.action === "created")       updateRow(r.code, { step: "product-ok",  productNote: "✅ Created" });
+      else if (r.action === "updated")  updateRow(r.code, { step: "product-ok",  productNote: "♻️ Updated" });
+      else if (r.action === "skipped")  updateRow(r.code, { step: "product-err", productNote: `⏭️ ${r.error ?? "Skipped"}` });
+      else                              updateRow(r.code, { step: "product-err", productNote: `❌ ${r.error}` });
     }
 
     // ── 2. Upload + link images product by product ──────────────────────────
@@ -706,10 +707,10 @@ export function BulkImportPage() {
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: "#065f46" }}>✅ Import Complete</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10 }}>
           {[
-            ["Created",    summary?.productsCreated, "#d1fae5", "#065f46"],
-            ["Updated",    summary?.productsUpdated, "#dbeafe", "#1e40af"],
-            ["Skipped",    summary?.productsSkipped, "#fef3c7", "#92400e"],
-            ["Errors",     summary?.productErrors,   "#fee2e2", "#991b1b"],
+            ["Created",    summary?.created,       "#d1fae5", "#065f46"],
+            ["Updated",    summary?.updated,       "#dbeafe", "#1e40af"],
+            ["Skipped",    summary?.skipped,       "#fef3c7", "#92400e"],
+            ["Errors",     summary?.productErrors, "#fee2e2", "#991b1b"],
             ["Imgs uploaded", summary?.imagesUploaded, "#d1fae5", "#065f46"],
             ["Prods linked",  summary?.productsLinked, "#d1fae5", "#065f46"],
           ].map(([label, val, bg, fg]) => (

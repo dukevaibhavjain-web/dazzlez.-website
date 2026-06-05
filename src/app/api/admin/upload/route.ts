@@ -11,6 +11,8 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
