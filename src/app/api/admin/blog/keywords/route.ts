@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     const status = url.searchParams.get("status") || "pending";
 
     const keywords = await payload.find({
-      collection: "keyword-bank",
+      collection: "keyword-bank" as any,
       where: {
         status: { equals: status },
       },

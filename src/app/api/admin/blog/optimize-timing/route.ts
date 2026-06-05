@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     // Check if we have enough published blogs
     const publishedBlogs = await payload.find({
-      collection: "blogs",
+      collection: "blogs" as any,
       where: { status: { equals: "published" } },
       select: { id: true },
       limit: 1,
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
 
     // Update BlogTimingSettings global
     const timingSettings = await payload.updateGlobal({
-      slug: "blog-timing-settings",
+      slug: "blog-timing-settings" as any,
       data: {
         recommendedSlot: recommendation.recommendedSlot,
         recommendationReason: recommendation.reason,

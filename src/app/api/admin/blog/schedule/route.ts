@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     // Fetch blog
     const blog = await payload.findByID({
-      collection: "blogs",
+      collection: "blogs" as any,
       id: blogId,
       depth: 0,
     });
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     // Count published blogs to determine A/B slot
     const publishedBlogs = await payload.find({
-      collection: "blogs",
+      collection: "blogs" as any,
       where: { status: { equals: "published" } },
       select: { id: true },
       limit: 1,
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     // Update blog
     const updated = await payload.update({
-      collection: "blogs",
+      collection: "blogs" as any,
       id: blogId,
       data: {
         status: "scheduled",

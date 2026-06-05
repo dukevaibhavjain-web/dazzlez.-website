@@ -244,12 +244,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const reviewSchemas = reviews.length > 0
     ? buildReviewSchema(
         reviews.map((r) => ({
-          id: r.id,
+          id: String(r.id),
           rating: r.rating,
           authorName: r.authorName,
           title: r.title,
           body: r.body,
-          reviewDate: r.reviewDate,
+          reviewDate: r.reviewDate || undefined,
         })),
         {
           displayName: product.displayName,

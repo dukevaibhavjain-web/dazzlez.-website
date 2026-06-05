@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     // Calculate revenue metrics
     const purchaseEvents = events.filter((e) => e.eventName === "Purchase");
     const totalRevenue = purchaseEvents.reduce(
-      (sum, e) => sum + (e.eventData?.revenue || 0),
+      (sum, e) => sum + ((e.eventData as any)?.revenue || 0),
       0
     );
     const totalOrders = purchaseEvents.length;
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
 
     // Fetch blog metrics
     const blogsRes = await payload.find({
-      collection: "blogs",
+      collection: "blogs" as any,
       where: { status: { equals: "published" } },
       limit: 1000,
       depth: 0,

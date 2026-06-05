@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     // Step 1: Fetch keyword
     const keyword = await payload.findByID({
-      collection: "keyword-bank",
+      collection: "keyword-bank" as any,
       id: keywordId,
       depth: 1,
     });
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
     if (blogId) {
       // Update existing blog
       createdBlog = await payload.update({
-        collection: "blogs",
+        collection: "blogs" as any,
         id: blogId,
         data: blogData,
       });
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
     } else {
       // Create new blog
       createdBlog = await payload.create({
-        collection: "blogs",
+        collection: "blogs" as any,
         data: blogData,
         overrideAccess: true,
       });
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
 
     // Step 7: Mark keyword as used
     await payload.update({
-      collection: "keyword-bank",
+      collection: "keyword-bank" as any,
       id: keywordId,
       data: {
         blogUsed: (createdBlog as any).id,

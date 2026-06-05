@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       try {
         // Check if keyword already exists
         const existing = await payload.find({
-          collection: "keyword-bank",
+          collection: "keyword-bank" as any,
           where: { keyword: { equals: kw.keyword } },
           limit: 1,
           depth: 0,
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
         // Create new keyword doc
         await payload.create({
-          collection: "keyword-bank",
+          collection: "keyword-bank" as any,
           data: {
             keyword: kw.keyword,
             searchIntent: kw.searchIntent,

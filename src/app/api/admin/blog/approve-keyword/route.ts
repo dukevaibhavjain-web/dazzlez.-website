@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     const updated = await payload.update({
-      collection: "keyword-bank",
+      collection: "keyword-bank" as any,
       id: keywordId,
       data: {
         status: "approved",

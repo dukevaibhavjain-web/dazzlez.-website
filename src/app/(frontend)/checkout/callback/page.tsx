@@ -83,7 +83,7 @@ function CallbackInner() {
 
         if (data.paymentStatus === "captured") {
           // Track Purchase event
-          trackPurchase(data.totalInr || 0, data.orderId || orderId, 1);
+          trackPurchase(data.orderId || orderId, data.totalInr || 0, []);
           clearCart();
           router.replace(`/order-confirmation/${orderId}`);
           return;

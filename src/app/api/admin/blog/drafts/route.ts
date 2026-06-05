@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     }
 
     const blogs = await payload.find({
-      collection: "blogs",
+      collection: "blogs" as any,
       where: {
         or: [
           { status: { equals: "draft" } },

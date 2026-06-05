@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     const now = new Date();
 
     const scheduledBlogs = await payload.find({
-      collection: "blogs",
+      collection: "blogs" as any,
       where: {
         and: [
           { status: { equals: "scheduled" } },
@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
         // Update blog: status → published, add to history
         const updated = await payload.update({
-          collection: "blogs",
+          collection: "blogs" as any,
           id: blogId,
           data: {
             status: "published",
@@ -109,7 +109,7 @@ export async function GET(req: Request) {
 
     // Update blog timing settings with new publish count
     const allPublished = await payload.find({
-      collection: "blogs",
+      collection: "blogs" as any,
       where: { status: { equals: "published" } },
       select: { id: true },
       limit: 1,
@@ -117,7 +117,7 @@ export async function GET(req: Request) {
     });
 
     await payload.updateGlobal({
-      slug: "blog-timing-settings",
+      slug: "blog-timing-settings" as any,
       data: {
         publishedBlogCount: allPublished.totalDocs || 0,
       },

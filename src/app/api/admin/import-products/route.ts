@@ -282,7 +282,7 @@ export async function POST(req: Request) {
       const existing = existingByCode.get(p.code);
       const dbStatus = existing ? "existing" : "new";
       const dbId     = existing ? existing.id : null;
-      const diff     = existing ? buildDiff(p, existing as Record<string, unknown>) : [];
+      const diff     = existing ? buildDiff(p, existing as unknown as Record<string, unknown>) : [];
       return { ...p, categoryId: catId, shapeId, dbStatus, dbId, diff };
     });
 
