@@ -36,18 +36,23 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const payload = await getPayload({ config });
+  try {
+    const payload = await getPayload({ config });
 
-  const blogs = await payload.find({
-    collection: "blogs" as any,
-    where: { status: { equals: "published" } },
-    depth: 0,
-    limit: 100,
-  });
+    const blogs = await payload.find({
+      collection: "blogs" as any,
+      where: { status: { equals: "published" } },
+      depth: 0,
+      limit: 100,
+    });
 
-  return blogs.docs.map((blog: any) => ({
-    slug: blog.slug,
-  }));
+    return blogs.docs.map((blog: any) => ({
+      slug: blog.slug,
+    }));
+  } catch {
+    // Tables may not exist yet on first deploy — fall back to on-demand rendering
+    return [];
+  }
 }
 
 async function generateBlogSchema(blog: BlogDoc) {
@@ -196,33 +201,37 @@ function renderLexicalContent(lexicalData: any) {
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { slug } = await params;
-  const payload = await getPayload({ config });
+  try {
+    const { slug } = await params;
+    const payload = await getPayload({ config });
 
-  const blogs = await payload.find({
-    collection: "blogs" as any,
-    where: { and: [{ status: { equals: "published" } }, { slug: { equals: slug } }] },
-    depth: 1,
-    limit: 1,
-  });
+    const blogs = await payload.find({
+      collection: "blogs" as any,
+      where: { and: [{ status: { equals: "published" } }, { slug: { equals: slug } }] },
+      depth: 1,
+      limit: 1,
+    });
 
-  if (blogs.docs.length === 0) {
-    return { title: "Not Found" };
-  }
+    if (blogs.docs.length === 0) {
+      return { title: "Not Found" };
+    }
 
-  const blog = blogs.docs[0] as BlogDoc;
+    const blog = blogs.docs[0] as BlogDoc;
 
-  return {
-    title: blog.metaTitle || blog.title,
-    description: blog.metaDescription || blog.excerpt,
-    openGraph: {
+    return {
       title: blog.metaTitle || blog.title,
       description: blog.metaDescription || blog.excerpt,
-      type: "article",
-      publishedTime: blog.publishedAt,
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${blog.slug}`,
-    },
-  };
+      openGraph: {
+        title: blog.metaTitle || blog.title,
+        description: blog.metaDescription || blog.excerpt,
+        type: "article",
+        publishedTime: blog.publishedAt,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${blog.slug}`,
+      },
+    };
+  } catch {
+    return { title: "Blog" };
+  }
 }
 
 export default async function BlogDetailPage({ params }: PageProps) {

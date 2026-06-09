@@ -40,35 +40,8 @@ export const metadata = {
   },
 };
 
-export async function generateStaticParams() {
-  const payload = await getPayload({ config });
-
-  const categories = await payload.find({
-    collection: "blog-categories" as any,
-    depth: 0,
-    limit: 100,
-  });
-
-  const tags = await payload.find({
-    collection: "blog-tags" as any,
-    depth: 0,
-    limit: 100,
-  });
-
-  const params: Array<{ category?: string; tag?: string }> = [{}];
-
-  // Category params
-  for (const cat of categories.docs) {
-    params.push({ category: (cat as any).slug });
-  }
-
-  // Tag params
-  for (const t of tags.docs) {
-    params.push({ tag: (t as any).slug });
-  }
-
-  return params;
-}
+// Force dynamic — depends on searchParams, no static generation needed
+export const dynamic = "force-dynamic";
 
 async function generateBlogSchema(blogs: BlogDoc[]) {
   return {
@@ -92,72 +65,92 @@ export default async function BlogPage({ searchParams }: PageProps) {
   const categorySlug = params.category;
   const tagSlug = params.tag;
 
-  const payload = await getPayload({ config });
+  let payload;
+  try {
+    payload = await getPayload({ config });
+  } catch {
+    return (
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "80px 20px", textAlign: "center" }}>
+        <h1 style={{ fontSize: "32px", fontWeight: 700, color: "#001f3f", marginBottom: "16px" }}>Blog</h1>
+        <p style={{ fontSize: "16px", color: "#666" }}>Coming soon! Check back shortly.</p>
+      </div>
+    );
+  }
 
-  // Build where clause
-  const where: any = {
-    and: [{ status: { equals: "published" } }],
-  };
+  // Fetch data — wrapped in try/catch for first deploy before tables exist
+  let blogList: BlogDoc[] = [];
+  let allCategories: { docs: any[] } = { docs: [] };
+  let allTags: { docs: any[] } = { docs: [] };
+  let blogs: { totalPages: number; docs: any[] } = { totalPages: 0, docs: [] };
 
-  if (categorySlug) {
-    const categoryDocs = await payload.find({
+  try {
+    // Build where clause
+    const where: any = {
+      and: [{ status: { equals: "published" } }],
+    };
+
+    if (categorySlug) {
+      const categoryDocs = await payload.find({
+        collection: "blog-categories" as any,
+        where: { slug: { equals: categorySlug } },
+        limit: 1,
+        depth: 0,
+      });
+
+      if (categoryDocs.docs.length === 0) {
+        redirect("/blog");
+      }
+
+      const categoryId = (categoryDocs.docs[0] as any).id;
+      where.and.push({ category: { equals: categoryId } });
+    }
+
+    if (tagSlug) {
+      const tagDocs = await payload.find({
+        collection: "blog-tags" as any,
+        where: { slug: { equals: tagSlug } },
+        limit: 1,
+        depth: 0,
+      });
+
+      if (tagDocs.docs.length === 0) {
+        redirect("/blog");
+      }
+
+      const tagId = (tagDocs.docs[0] as any).id;
+      where.and.push({ tags: { contains: tagId } });
+    }
+
+    const BLOGS_PER_PAGE = 12;
+
+    // Fetch blogs with pagination
+    blogs = await payload.find({
+      collection: "blogs" as any,
+      where,
+      limit: BLOGS_PER_PAGE,
+      page,
+      sort: "-publishedAt",
+      depth: 1,
+    });
+
+    blogList = blogs.docs as BlogDoc[];
+
+    // Fetch all categories for filter chips
+    allCategories = await payload.find({
       collection: "blog-categories" as any,
-      where: { slug: { equals: categorySlug } },
-      limit: 1,
       depth: 0,
+      limit: 100,
     });
 
-    if (categoryDocs.docs.length === 0) {
-      redirect("/blog");
-    }
-
-    const categoryId = (categoryDocs.docs[0] as any).id;
-    where.and.push({ category: { equals: categoryId } });
-  }
-
-  if (tagSlug) {
-    const tagDocs = await payload.find({
+    // Fetch all tags for filter chips
+    allTags = await payload.find({
       collection: "blog-tags" as any,
-      where: { slug: { equals: tagSlug } },
-      limit: 1,
       depth: 0,
+      limit: 100,
     });
-
-    if (tagDocs.docs.length === 0) {
-      redirect("/blog");
-    }
-
-    const tagId = (tagDocs.docs[0] as any).id;
-    where.and.push({ tags: { contains: tagId } });
+  } catch {
+    // Tables may not exist yet — show empty state
   }
-
-  const BLOGS_PER_PAGE = 12;
-
-  // Fetch blogs with pagination
-  const blogs = await payload.find({
-    collection: "blogs" as any,
-    where,
-    limit: BLOGS_PER_PAGE,
-    page,
-    sort: "-publishedAt",
-    depth: 1,
-  });
-
-  const blogList = blogs.docs as BlogDoc[];
-
-  // Fetch all categories for filter chips
-  const allCategories = await payload.find({
-    collection: "blog-categories" as any,
-    depth: 0,
-    limit: 100,
-  });
-
-  // Fetch all tags for filter chips
-  const allTags = await payload.find({
-    collection: "blog-tags" as any,
-    depth: 0,
-    limit: 100,
-  });
 
   const schema = await generateBlogSchema(blogList);
 
